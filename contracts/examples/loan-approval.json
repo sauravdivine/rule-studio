@@ -1,0 +1,165 @@
+{
+  "id": "0b8f9a52-3c1e-4d7a-9a40-6f2d1c7e5b11",
+  "name": "Personal Loan Approval",
+  "description": "Screens personal loan applications by credit score, income, debt ratio and employment.",
+  "schemaVersion": 1,
+  "inputFields": [
+    {
+      "key": "creditScore",
+      "label": "Credit score",
+      "type": "NUMBER"
+    },
+    {
+      "key": "annualIncome",
+      "label": "Annual income (₹)",
+      "type": "NUMBER"
+    },
+    {
+      "key": "debtToIncome",
+      "label": "Debt-to-income ratio (%)",
+      "type": "NUMBER"
+    },
+    {
+      "key": "employmentType",
+      "label": "Employment type",
+      "type": "STRING",
+      "allowedValues": ["SALARIED", "SELF_EMPLOYED", "UNEMPLOYED", "STUDENT"]
+    },
+    {
+      "key": "hasDefaulted",
+      "label": "Previous default",
+      "type": "BOOLEAN"
+    },
+    {
+      "key": "dateOfBirth",
+      "label": "Date of birth",
+      "type": "DATE"
+    }
+  ],
+  "hitStrategy": "FIRST",
+  "defaultAction": {
+    "decision": "REFER",
+    "reason": "No rule matched; needs manual review"
+  },
+  "rules": [
+    {
+      "id": "4c2f7e1a-8b3d-4f60-a1e2-93b7d5c6f021",
+      "name": "Reject previous defaulters",
+      "priority": 1,
+      "enabled": true,
+      "when": {
+        "type": "group",
+        "operator": "AND",
+        "children": [
+          {
+            "type": "condition",
+            "field": "hasDefaulted",
+            "operator": "EQ",
+            "value": true
+          }
+        ]
+      },
+      "then": {
+        "decision": "REJECT",
+        "reason": "Applicant has a previous default"
+      }
+    },
+    {
+      "id": "9d1e3b7c-2a4f-4e85-b6c0-1f8a7d2e4c93",
+      "name": "Reject low score and no stable income",
+      "priority": 2,
+      "enabled": true,
+      "when": {
+        "type": "group",
+        "operator": "AND",
+        "children": [
+          {
+            "type": "condition",
+            "field": "creditScore",
+            "operator": "LT",
+            "value": 600
+          },
+          {
+            "type": "group",
+            "operator": "OR",
+            "children": [
+              {
+                "type": "condition",
+                "field": "annualIncome",
+                "operator": "LT",
+                "value": 300000
+              },
+              {
+                "type": "condition",
+                "field": "employmentType",
+                "operator": "IN",
+                "value": ["UNEMPLOYED", "STUDENT"]
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "decision": "REJECT",
+        "reason": "Low credit score without stable income"
+      }
+    },
+    {
+      "id": "e7a5c2d9-6b1f-4a3e-8c47-2d9f0b6a1e58",
+      "name": "Refer high debt ratio",
+      "priority": 3,
+      "enabled": true,
+      "when": {
+        "type": "group",
+        "operator": "AND",
+        "children": [
+          {
+            "type": "condition",
+            "field": "debtToIncome",
+            "operator": "BETWEEN",
+            "value": [40, 60]
+          }
+        ]
+      },
+      "then": {
+        "decision": "REFER",
+        "reason": "Debt-to-income between 40% and 60% needs manual review"
+      }
+    },
+    {
+      "id": "2f6b8e4a-1c9d-4b72-a5e3-7c0d4f9b2a16",
+      "name": "Approve strong salaried applicants",
+      "priority": 4,
+      "enabled": true,
+      "when": {
+        "type": "group",
+        "operator": "AND",
+        "children": [
+          {
+            "type": "condition",
+            "field": "creditScore",
+            "operator": "GTE",
+            "value": 750
+          },
+          {
+            "type": "condition",
+            "field": "employmentType",
+            "operator": "EQ",
+            "value": "SALARIED"
+          },
+          {
+            "type": "condition",
+            "field": "debtToIncome",
+            "operator": "LT",
+            "value": 40
+          }
+        ]
+      },
+      "then": {
+        "decision": "APPROVE"
+      }
+    }
+  ],
+  "createdAt": "2026-11-05T03:00:00Z",
+  "updatedAt": "2026-11-05T03:00:00Z"
+}

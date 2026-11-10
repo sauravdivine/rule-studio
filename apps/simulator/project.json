@@ -1,0 +1,27 @@
+{
+  "name": "simulator",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/simulator/src",
+  "projectType": "application",
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "command": "vite",
+        "cwd": "apps/simulator"
+      },
+      "readyWhen": {
+        "signal": true
+      },
+      "dependsOn": ["shell:serve"]
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/simulator"
+      }
+    }
+  }
+}
