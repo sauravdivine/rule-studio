@@ -133,7 +133,7 @@ Rulesets will later be able to define `outputFields` (e.g. `creditLimit`, `inter
 - [x] A ruleset with 4 levels of nesting fails schema validation.
 - [x] A condition with an unknown `operator` fails schema validation.
 - [x] `schemaVersion` other than `1`, an unknown `hitStrategy`, and a bare-string `defaultAction` fail schema validation.
-- [ ] `libs/shared-types` contains TypeScript types generated from the schema by `npm run contracts:types`, and the workspace typechecks (blocked: the apps' typecheck target is currently disabled).
+- [x] `libs/shared-types` contains TypeScript types generated from the schema by `npm run contracts:types`, and the workspace typechecks.
 - [ ] Each cross-field rule above has a failing example documented for spec 004/005 tests.
 
 ## Out of scope

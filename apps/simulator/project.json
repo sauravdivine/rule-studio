@@ -22,6 +22,14 @@
         "command": "vite build",
         "cwd": "apps/simulator"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tsconfig.json --noEmit",
+        "cwd": "apps/simulator"
+      },
+      "dependsOn": ["^typecheck"]
     }
   }
 }

@@ -22,6 +22,14 @@
         "command": "vite build",
         "cwd": "apps/dashboard"
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc -p tsconfig.json --noEmit",
+        "cwd": "apps/dashboard"
+      },
+      "dependsOn": ["^typecheck"]
     }
   }
 }
