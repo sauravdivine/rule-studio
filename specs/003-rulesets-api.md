@@ -32,6 +32,11 @@ Identity fields (`name`, `description`) are not versioned: changing them takes e
 - The user can pin any published version at any time.
 - **Rollback** never edits history: copy the old version into the draft, then publish it as a new version.
 
+### Who may do what (from spec 002)
+
+- Editors and admins may edit drafts and publish (`ruleset:publish`).
+- Only admins may pin the live version (`ruleset:pin`) and archive (`ruleset:archive`).
+
 ### Simulator
 
 The simulator can run the **draft** (to test before publishing) or **any published version**.
@@ -41,4 +46,3 @@ The simulator can run the **draft** (to test before publishing) or **any publish
 - Endpoints and payloads (to go into `contracts/openapi.yaml`).
 - Concurrent draft edits: optimistic locking (e.g. a draft revision number or ETag)?
 - Archiving: can an archived ruleset keep a live version?
-- Who may publish and pin (ties into spec 002 roles).

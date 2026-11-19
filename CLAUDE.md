@@ -24,12 +24,20 @@ Rules that apply throughout:
 - Decisions belong to the owner. When a choice is open, present the options and a recommendation, and let the owner decide.
 - `contracts/` is the single source of truth for data shapes and the HTTP API. Never hand-write a type that is generated from a contract; change the contract and regenerate.
 
+### Learning mode
+
+The owner is building this project to learn, not only to finish it.
+
+- **The owner runs setup and infrastructure commands**: installs, Docker, migrations, seeds, generators, starting servers. Give each command with a one-line explanation of what it does. Routine checks (lint, typecheck, tests) may be run by the agent.
+- **Flag "write this yourself" moments.** While implementing, when a piece is core to the design or likely to come up in an interview (for example token rotation, the single-flight refresh, the rule engine), stop and say so before writing it. Then guide the owner: explain the idea, give hints or a skeleton rather than the full solution, and review what they write.
+- Explain the why behind non-obvious code, briefly, as you go.
+
 Specs are numbered in build order:
 
 | #   | Spec                  | Status             |
 | --- | --------------------- | ------------------ |
 | 001 | Ruleset data model    | Approved           |
-| 002 | Auth                  | Not started        |
+| 002 | Auth                  | Approved           |
 | 003 | Rulesets API          | Decisions captured |
 | 004 | Rule editor           | Not started        |
 | 005 | Rule engine           | Not started        |

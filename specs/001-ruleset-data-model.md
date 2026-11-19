@@ -24,7 +24,7 @@ The schema describes a ruleset's **working document**: its identity plus its rul
 | Field                    | Type                  | Part of           | Notes                                                                  |
 | ------------------------ | --------------------- | ----------------- | ---------------------------------------------------------------------- |
 | `id`                     | UUID                  | Identity          | Server-assigned                                                        |
-| `name`                   | string, 1–100 chars   | Identity          | Unique per owner (enforced by the API, spec 003)                       |
+| `name`                   | string, 1–100 chars   | Identity          | Unique across the workspace (spec 002)                                 |
 | `description`            | string, ≤ 500 chars   | Identity          | Optional                                                               |
 | `schemaVersion`          | `1`                   | Versioned content | Version of this JSON format, not of the content; see Schema versioning |
 | `inputFields`            | InputField[], 1–50    | Versioned content | The input data model; rules may only reference these                   |
