@@ -1,7 +1,7 @@
 # 002 · Auth: implementation plan
 
 **Spec:** [002-auth.md](002-auth.md) (approved)
-**Status:** Awaiting approval
+**Status:** Approved (19 Nov 2026), in progress
 
 Each task is one reviewable step. After each: checks pass, the owner reviews, then commits. No task starts before the previous one is reviewed.
 
@@ -99,7 +99,7 @@ Follows "Learning mode" in `CLAUDE.md`:
 - On the owner's Mac: Postgres up, migrate, seed, serve everything; sign in as each demo user; check refresh by waiting out a short access-token lifetime.
 - Tick the spec's acceptance criteria; mark spec 002 Done in `CLAUDE.md`.
 
-## Decisions to confirm
+## Decisions (confirmed 19 Nov 2026)
 
 1. NestJS 11 instead of 12, because Nx 24's Nest generator only supports up to 11.
 2. Prisma 7.10 stable, not the 8.0 release candidate.

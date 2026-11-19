@@ -54,13 +54,16 @@ apps/
   rule-editor/    remote (provider): ruleset list, ruleset detail, rule form, AI rule writer
   simulator/      remote: run a ruleset on sample data, AI explanations
   dashboard/      remote: charts over simulation runs
+  api/            NestJS backend: auth, rulesets API, simulation, AI (from spec 002)
 libs/
   ui/             shared React components and design tokens
-  shared-types/   TypeScript types generated from contracts/ (do not edit generated files)
+  shared-types/   TypeScript types and Zod schemas generated from contracts/ (do not edit generated files)
+  permissions/    role-to-permission map and can(), used by both the API and the frontend (spec 002)
+  api-client/     stateless API client: auth header, one shared refresh on 401 (spec 002)
+  host/           HostProps type the shell passes to remotes: { user, can, api } (spec 002)
 contracts/        JSON Schemas and the OpenAPI spec, the source of truth
   examples/       example payloads, used as test fixtures
-specs/            one markdown spec per feature
-backend/          Spring Boot 3, Java 21, Maven (not managed by Nx's package graph)
+specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md)
 ```
 
 ## Frontend conventions
@@ -76,12 +79,15 @@ backend/          Spring Boot 3, Java 21, Maven (not managed by Nx's package gra
 
 ## Backend conventions (from spec 002 onwards)
 
-- Spring Boot 3, Java 21, Maven wrapper (`./mvnw`), PostgreSQL, Flyway migrations.
-- Package by feature: `auth`, `rulesets`, `engine`, `simulation`, `ai`.
-- Controllers match `contracts/openapi.yaml` exactly.
-- The LLM is only ever called from the backend. API keys come from environment variables, never from code or the frontend.
-- Treat all user text and model output as untrusted data: validate model output against the ruleset JSON Schema before using or returning it.
-- Tests: JUnit 5 and Mockito; integration tests for each controller.
+- NestJS 11 on Node 22+, Express, as the Nx app `apps/api` on port 3000.
+- PostgreSQL (Docker Compose locally), Prisma for schema, migrations and seeding.
+- One Nest module per feature: `auth`, `users`, `rulesets`, `simulation`, `ai`, plus `common` for config, errors and validation.
+- Controllers match `contracts/openapi.yaml` exactly. Request validation uses the Zod schemas generated from the contract; no hand-written DTO classes.
+- Every error is returned as RFC 9457 problem details by one global exception filter.
+- Authorise with permissions from `libs/permissions` (`@RequirePermission(...)`), never by checking role names.
+- Configuration comes from environment variables, validated with Zod at startup. Secrets and keys are never in code.
+- The LLM is only ever called from the API. Treat all user text and model output as untrusted data: validate model output against the ruleset JSON Schema before using or returning it.
+- Tests: Vitest for unit tests, Supertest for API tests against a real Postgres.
 
 ## Commands
 
@@ -95,7 +101,8 @@ npx nx run-many -t serve -p shell rule-editor simulator dashboard
 npx nx run-many -t build
 npx nx run-many -t lint test typecheck
 npm run contracts:types           # regenerate libs/shared-types from contracts/
-cd backend && ./mvnw spring-boot:run   # from spec 002 onwards
+docker compose up -d              # Postgres (from spec 002)
+npx nx serve api                  # API on :3000 (from spec 002)
 ```
 
 ## Working rules for AI agents

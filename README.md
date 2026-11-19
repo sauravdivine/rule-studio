@@ -7,7 +7,7 @@ Built with spec-driven development: every feature starts as a spec in [`specs/`]
 ## Stack
 
 - **Frontend:** React 19, TypeScript, Vite, micro frontends with Module Federation, Nx monorepo
-- **Backend:** Spring Boot 3, Java 21, PostgreSQL (coming in spec 002)
+- **Backend:** NestJS, Node.js, TypeScript, PostgreSQL with Prisma (spec 002)
 - **AI:** LLM features called from the backend (coming in specs 008–009)
 
 ## Structure
@@ -18,11 +18,11 @@ Built with spec-driven development: every feature starts as a spec in [`specs/`]
 | `apps/rule-editor`  | Remote: rulesets and rules                           |
 | `apps/simulator`    | Remote: run a ruleset on sample data                 |
 | `apps/dashboard`    | Remote: charts over simulation runs                  |
+| `apps/api`          | NestJS API (spec 002)                                |
 | `libs/ui`           | Shared components                                    |
 | `libs/shared-types` | Types generated from `contracts/`                    |
 | `contracts/`        | JSON Schemas, OpenAPI, example payloads              |
 | `specs/`            | Feature specs, in build order                        |
-| `backend/`          | Spring Boot service                                  |
 
 ## Run it
 
