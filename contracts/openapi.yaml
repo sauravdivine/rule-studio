@@ -1,0 +1,286 @@
+openapi: 3.1.0
+info:
+  title: Rule Studio API
+  version: 0.1.0
+  description: |
+    The HTTP contract between the Rule Studio frontend and API.
+    Contract-first: this file is written by hand. TypeScript types and Zod
+    schemas are generated from it (npm run contracts:types). See specs/002-auth.md.
+
+servers:
+  - url: /
+    description: Same origin as the frontend (proxied in dev and in deployment)
+
+tags:
+  - name: auth
+    description: Sign-in, token refresh and sign-out (spec 002)
+
+# Every endpoint needs an access token unless it overrides this with its own `security`.
+security:
+  - bearerAuth: []
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      summary: Sign in with email and password
+      security: [] # open endpoint: no token needed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Signed in. The refresh token is set as an HttpOnly cookie.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetRefreshCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          description: Invalid email or password. Same response for unknown emails and wrong passwords.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/auth/refresh:
+    post:
+      tags: [auth]
+      operationId: refresh
+      summary: Refresh the session using refresh token as access token is expired
+      security:
+        - refreshCookie: []
+      responses:
+        '200':
+          description: New access token.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SetRefreshCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/auth/logout:
+    post:
+      tags: [auth]
+      operationId: logout
+      summary: Logs out the user and expires the tokens and removes the cookie
+      security:
+        - refreshCookie: []
+        - {}
+      responses:
+        '204':
+          description: Logout the user.
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/ClearRefreshCookie'
+
+  /api/auth/me:
+    get:
+      tags: [auth]
+      operationId: getCurrentUser
+      summary: The signed-in user
+      # no `security` here, so the top-level bearerAuth applies
+      responses:
+        '200':
+          description: The signed-in user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /.well-known/jwks.json:
+    get:
+      tags: [auth]
+      operationId: getJwks
+      summary: Public keys for verifying access tokens
+      security: []
+      responses:
+        '200':
+          description: The JSON Web Key Set.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Jwks'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token, valid for 15 minutes, signed with RS256.
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: rs_refresh
+      description: Opaque refresh token, valid for 7 days. HttpOnly, Secure, SameSite=Strict, Path=/api/auth.
+
+  headers:
+    SetRefreshCookie:
+      description: '`rs_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800`'
+      schema:
+        type: string
+    ClearRefreshCookie:
+      description: '`rs_refresh=; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=0`'
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: The request body is invalid.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Unauthorized:
+      description: Not signed in, or the token is missing, expired or revoked.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    TooManyRequests:
+      description: Too many attempts. Try again after the number of seconds in Retry-After.
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    AuthResponse:
+      type: object
+      additionalProperties: false
+      required: [accessToken, expiresIn, user]
+      properties:
+        accessToken:
+          type: string
+          description: RS256-signed JWT. Keep in memory only.
+        expiresIn:
+          type: integer
+          description: Seconds until the access token expires.
+          minimum: 1
+        user:
+          $ref: '#/components/schemas/User'
+
+    Role:
+      type: string
+      enum: [VIEWER, EDITOR, ADMIN]
+
+    Permission:
+      type: string
+      description: What a user may do. The role-to-permission map lives in libs/permissions.
+      enum:
+        - ruleset:read
+        - ruleset:edit
+        - ruleset:publish
+        - ruleset:pin
+        - ruleset:archive
+        - simulation:run
+        - dashboard:read
+        - user:manage
+
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, displayName, role, permissions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/Role'
+        permissions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Permission'
+
+    ProblemDetails:
+      type: object
+      description: RFC 9457 problem details. Every API error uses this shape.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          description: A URI reference identifying the problem type, or about:blank.
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+
+    Jwk:
+      type: object
+      required: [kty, kid, use, alg, n, e]
+      properties:
+        kty:
+          type: string
+          const: RSA
+        kid:
+          type: string
+        use:
+          type: string
+          const: sig
+        alg:
+          type: string
+          const: RS256
+        n:
+          type: string
+        e:
+          type: string
+
+    Jwks:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Jwk'

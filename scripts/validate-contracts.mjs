@@ -1,9 +1,11 @@
-// Checks contracts/ruleset.schema.json against spec 001's acceptance criteria:
-// every example must validate, and every known-bad case must be rejected.
+// Checks the contracts:
+//   - ruleset.schema.json against spec 001: every example validates, every known-bad case is rejected
+//   - openapi.yaml is valid OpenAPI (spec 002)
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import SwaggerParser from '@apidevtools/swagger-parser';
 
 const root = new URL('..', import.meta.url).pathname;
 const schema = JSON.parse(
@@ -98,6 +100,16 @@ const badCases = [
 ];
 for (const [label, data] of badCases) {
   check(`rejects ${label}`, !validate(data));
+}
+
+// 3. The OpenAPI contract is valid OpenAPI 3.1, and every $ref resolves.
+try {
+  const api = await SwaggerParser.validate(
+    join(root, 'contracts/openapi.yaml'),
+  );
+  check(`openapi.yaml is valid (${Object.keys(api.paths).length} paths)`, true);
+} catch (error) {
+  check('openapi.yaml is valid', false, error.message);
 }
 
 console.log(
