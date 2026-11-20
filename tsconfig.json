@@ -11,6 +11,9 @@
     },
     {
       "path": "./libs/permissions"
+    },
+    {
+      "path": "./apps/api"
     }
   ],
   "compilerOptions": {}

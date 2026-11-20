@@ -1,0 +1,24 @@
+# Local development services. Start with:  docker compose up -d
+name: rule-studio
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rulestudio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rulestudio}
+      POSTGRES_DB: ${POSTGRES_DB:-rulestudio}
+    ports:
+      # Bound to 127.0.0.1 so the database is reachable from this machine only.
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # Postgres 18 images keep data under /var/lib/postgresql/<version>, so mount the parent.
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  db-data:

@@ -10,6 +10,13 @@ export default defineConfig({
     port: PORT,
     strictPort: true,
     host: '127.0.0.1',
+    // Same origin for the API (spec 002): the browser talks only to :4200, and Vite
+    // forwards these paths to the API on :3000. This keeps the refresh cookie
+    // first-party and means the API needs no CORS.
+    proxy: {
+      '/api': 'http://localhost:3000',
+      '/.well-known': 'http://localhost:3000',
+    },
   },
   preview: { port: PORT, strictPort: true },
   build: { target: 'chrome89' },
