@@ -31,6 +31,7 @@ The owner is building this project to learn, not only to finish it.
 - **The owner runs setup and infrastructure commands**: installs, Docker, migrations, seeds, generators, starting servers. Give each command with a one-line explanation of what it does. Routine checks (lint, typecheck, tests) may be run by the agent.
 - **Flag "write this yourself" moments.** While implementing, when a piece is core to the design or likely to come up in an interview (for example token rotation, the single-flight refresh, the rule engine), stop and say so before writing it. Then guide the owner: explain the idea, give hints or a skeleton rather than the full solution, and review what they write.
 - Explain the why behind non-obvious code, briefly, as you go.
+- **Keep `docs/commands.md` current.** When a task introduces a command worth knowing (a new tool, script, generator or fix), add it to the right section of `docs/commands.md`, with what it does, in the same commit.
 
 Specs are numbered in build order:
 
@@ -65,6 +66,7 @@ libs/
 contracts/        JSON Schemas and the OpenAPI spec, the source of truth
   examples/       example payloads, used as test fixtures
 specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md)
+docs/             project docs, including commands.md (every command, what it does)
 ```
 
 ## Frontend conventions

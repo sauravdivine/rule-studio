@@ -26,6 +26,8 @@ Built with spec-driven development: every feature starts as a spec in [`specs/`]
 
 ## Run it
 
+Every command, and what it does, is in [`docs/commands.md`](docs/commands.md).
+
 Needs Node 22+ and npm 11+.
 
 ```bash
