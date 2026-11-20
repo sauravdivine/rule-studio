@@ -89,7 +89,7 @@ Used both by each rule's `then` and by the ruleset's `defaultAction`.
 
 `Action` is always an object, never a bare decision, so it can grow later (see Future: output fields).
 
-## Evaluation (the engine implements this in spec 005)
+## Evaluation (the engine implements this in spec 006)
 
 1. Skip disabled rules. Evaluate the rest in ascending `priority`.
 2. A condition on a field missing from the record is `false`, except `IS_EMPTY`, which is `true`.
@@ -134,7 +134,7 @@ Rulesets will later be able to define `outputFields` (e.g. `creditLimit`, `inter
 - [x] A condition with an unknown `operator` fails schema validation.
 - [x] `schemaVersion` other than `1`, an unknown `hitStrategy`, and a bare-string `defaultAction` fail schema validation.
 - [x] `libs/shared-types` contains TypeScript types generated from the schema by `npm run contracts:types`, and the workspace typechecks.
-- [ ] Each cross-field rule above has a failing example documented for spec 004/005 tests.
+- [ ] Each cross-field rule above has a failing example documented for the rule editor and rule engine tests (specs 005 and 006).
 
 ## Out of scope
 

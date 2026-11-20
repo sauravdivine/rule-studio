@@ -8,7 +8,7 @@ Built with spec-driven development: every feature starts as a spec in [`specs/`]
 
 - **Frontend:** React 19, TypeScript, Vite, micro frontends with Module Federation, Nx monorepo
 - **Backend:** NestJS, Node.js, TypeScript, PostgreSQL with Prisma (spec 002)
-- **AI:** LLM features called from the backend (coming in specs 008–009)
+- **AI:** LLM features called from the backend (coming in specs 009–010)
 
 ## Structure
 

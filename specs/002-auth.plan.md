@@ -24,6 +24,10 @@ Follows "Learning mode" in `CLAUDE.md`:
 - The AI writes most code, runs routine checks, and flags pieces worth the owner writing as they come up during implementation, then guides and reviews.
 - The owner reviews and commits each task.
 
+## Sequencing (decided 20 Nov 2026)
+
+Tasks 0–7 (contract, permissions, API, database, tokens, auth endpoints, API client) are built first. Then spec 002 **pauses**, and spec 004 (UI foundation: design tokens and components) is specced and built. Tasks 8 and 9 (login page, routing, host prop) resume afterwards, so the first screen is built with real `libs/ui` components and tokens instead of being restyled later.
+
 ## Tasks
 
 ### 0. Housekeeping
@@ -80,14 +84,14 @@ Follows "Learning mode" in `CLAUDE.md`:
 - Stateless `createApiClient({ getAccessToken, refresh, onSignedOut })`: adds the header, retries once after a 401, signs out if refresh fails.
 - **Done when:** tests prove two parallel 401s cause exactly one refresh, and a failed refresh calls `onSignedOut`.
 
-### 8. Shell: auth state, routing, login
+### 8. Shell: auth state, routing, login (after spec 004)
 
 - Auth state in the shell: in-memory token, user, single in-flight refresh, bootstrap refresh on load with a loading screen.
 - React Router: `/login`, `/rulesets`, `/simulator`, `/dashboard`; protected routes redirect to `/login` and return afterwards.
 - Login page with three demo sign-in buttons; navigation filtered by `can(...)`.
 - **Done when:** tests cover redirect-and-return, login errors, and that no token reaches localStorage or sessionStorage.
 
-### 9. Host prop to remotes
+### 9. Host prop to remotes (after spec 004)
 
 - `HostProps` type (`user`, `can`, `api`) in a small shared library, `libs/host`.
 - Shell passes `host` to each remote; each remote accepts it.

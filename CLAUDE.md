@@ -34,17 +34,18 @@ The owner is building this project to learn, not only to finish it.
 
 Specs are numbered in build order:
 
-| #   | Spec                  | Status             |
-| --- | --------------------- | ------------------ |
-| 001 | Ruleset data model    | Approved           |
-| 002 | Auth                  | Approved           |
-| 003 | Rulesets API          | Decisions captured |
-| 004 | Rule editor           | Not started        |
-| 005 | Rule engine           | Not started        |
-| 006 | Simulator             | Not started        |
-| 007 | Dashboard             | Not started        |
-| 008 | AI rule writer        | Not started        |
-| 009 | AI explain and review | Not started        |
+| #   | Spec                                        | Status             |
+| --- | ------------------------------------------- | ------------------ |
+| 001 | Ruleset data model                          | Approved           |
+| 002 | Auth                                        | Approved           |
+| 003 | Rulesets API                                | Decisions captured |
+| 004 | UI foundation: design tokens and components | Not started        |
+| 005 | Rule editor                                 | Not started        |
+| 006 | Rule engine                                 | Not started        |
+| 007 | Simulator                                   | Not started        |
+| 008 | Dashboard                                   | Not started        |
+| 009 | AI rule writer                              | Not started        |
+| 010 | AI explain and review                       | Not started        |
 
 ## Repository layout
 
@@ -108,7 +109,7 @@ npx nx serve api                  # API on :3000 (from spec 002)
 ## Working rules for AI agents
 
 - Ask before adding a dependency.
-- Prefer small, reviewable commits that reference the spec number, e.g. `feat(rule-editor): ruleset list (spec 004)`.
+- Prefer small, reviewable commits that reference the spec number, e.g. `feat(rule-editor): ruleset list (spec 005)`.
 - Do not invent APIs. If unsure how a library works, check its docs or types first.
 - Do not touch generated files by hand.
 
