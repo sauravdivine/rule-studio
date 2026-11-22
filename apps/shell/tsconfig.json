@@ -17,6 +17,18 @@
   "include": ["src"],
   "references": [
     {
+      "path": "../../libs/shared-types"
+    },
+    {
+      "path": "../../libs/permissions"
+    },
+    {
+      "path": "../../libs/api-client"
+    },
+    {
+      "path": "../../libs/host"
+    },
+    {
       "path": "../../libs/ui"
     }
   ]

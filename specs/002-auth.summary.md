@@ -1,7 +1,7 @@
 # 002 · Auth: build summary and learnings
 
 **Spec:** [002-auth.md](002-auth.md) · **Plan:** [002-auth.plan.md](002-auth.plan.md)
-**Status:** Tasks 0–7 built (19–22 Nov 2026). Tasks 8–9 (login page, routing, host prop) follow after spec 004; this file gets a section for them then.
+**Status:** Tasks 0–7 built 19–22 Nov 2026; tasks 8–9 built 22 Nov 2026 (section at the end). All 13 acceptance criteria met. Task 10 (the end-to-end check on the owner's Mac) remains.
 
 What was built, why, which libraries came in, and what is worth being able to explain in an interview.
 
@@ -20,7 +20,7 @@ What was built, why, which libraries came in, and what is worth being able to ex
 
 **Tests:** 104 across the workspace. The API's 59 include 24 HTTP tests (Supertest) that run the real app against a fresh Postgres test database built from the migrations.
 
-**Acceptance criteria:** 7 of 12 met. The remaining 5 (stay signed in across reloads, automatic refresh in the browser, no token in browser storage, redirect to login, viewer `host` in a remote) need the frontend, in tasks 8–9.
+**Acceptance criteria:** 7 of 13 met by tasks 0–7; the frontend six were met in tasks 8–9 (see the end of this file).
 
 ## How a request flows
 
@@ -111,3 +111,69 @@ These are the real "the AI or the tooling got it wrong, and it was caught" momen
 ## Commands introduced
 
 All listed, with what they do, in [`docs/commands.md`](../docs/commands.md): `npm run contracts:validate`, `npm run contracts:types`, `npm run jwt:keys`, `npx nx run api:prisma-generate`, `api:db-migrate`, `api:db-deploy`, `api:db-seed`, `api:db-studio`, and `docker compose up -d`, `ps`, `down`.
+
+## Tasks 8–9: sign-in in the shell, routing and the host prop (22 Nov 2026)
+
+Built in one go after spec 004, using its components.
+
+### What was built
+
+| Task           | What                                                                                                                                                                                                                                                         | Key files                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| 8 · Auth state | An auth session in plain TypeScript, with no React inside: the access token in a closure variable, the user, one shared refresh, login and logout. React reads it through `useSyncExternalStore`. It starts once in `bootstrap.tsx`, before the first render | `apps/shell/src/auth/session.ts`, `auth-context.tsx`                          |
+| 8 · Routing    | React Router: `/login`, `/rulesets`, `/simulator`, `/dashboard`, a 404 page. Signed-out visits go to `/login?returnTo=…` and come back after sign-in. A loading screen shows until the first refresh answers                                                 | `apps/shell/src/App.tsx`, `pages/require-auth.tsx`, `navigation.ts`           |
+| 8 · Login page | Email and password with React Hook Form, validated by the **same Zod schema the API uses** (`zLoginRequest`, generated from the contract). Inline errors, an error alert, a busy button and three demo sign-in buttons                                       | `pages/login-page.tsx`                                                        |
+| 8 · Layout     | Navigation filtered by `can()`, a user menu with role badge and sign out, the theme toggle                                                                                                                                                                   | `pages/shell-layout.tsx`                                                      |
+| 9 · Host prop  | `libs/host`: the `Host` / `HostProps` types and `createTestHost(role)` for tests and standalone runs. The shell passes `host` to each remote. The rule editor shows Edit and Publish only when `can()` allows                                                | `libs/host`, `apps/shell/src/remote-slot.tsx`, `apps/rule-editor/src/App.tsx` |
+
+**Tests:** 46 new. That is 39 in the shell (session, routing, login, layout, navigation, an axe scan of the login page), 3 in the rule editor (viewer/editor/admin) 3 in `libs/host`, and 1 in `libs/ui` for `CardTitle`'s heading level. The shell runs against a fake auth API that behaves like the real one: rotating refresh cookie, problem details, Bearer checks.
+
+**Checked in a real browser against the real API and Postgres** (Playwright, access token shortened to 60 seconds):
+
+- Visiting `/simulator` signed out → `/login?returnTo=%2Fsimulator` → the demo viewer button signs in and returns to `/simulator`.
+- A wrong password gives "Invalid email or password."
+- The viewer sees no Edit or Publish and a "Read only" badge. The editor sees Create, Edit and Publish.
+- JavaScript sees nothing in `localStorage`, `sessionStorage` or `document.cookie` (the refresh cookie is `HttpOnly`).
+- A reload keeps you signed in, including after the access token expired.
+- Sign out, then reload: still signed out, because the refresh token was revoked on the server.
+- No page errors.
+
+Not checked in the browser: the 401 → refresh → retry path, because no remote calls the API yet. It is covered by the session tests against the fake API and by `libs/api-client`'s tests, and will run for real once spec 003 adds endpoints the remotes call.
+
+### Decisions and why
+
+| Decision                                                                      | Why                                                                                                                                                                                               | Alternative considered                                                                |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Session as a plain TS module with `subscribe`/`getState`                      | The tricky logic (single-flight refresh, sign-out) is tested without rendering; React only reads it                                                                                               | Auth logic inside a React context provider with `useState`/`useEffect`                |
+| Start the session in `bootstrap.tsx`, not in a `useEffect`                    | StrictMode runs effects twice in development. Two refreshes with the same rotating token look like theft, and the API revokes every session. The session is also single-flight, as a second guard | `useEffect(() => refresh(), [])`                                                      |
+| Loading screen until the first refresh answers                                | Otherwise a signed-in user sees the login page flash on every reload                                                                                                                              | Render routes at once                                                                 |
+| `returnTo` in the URL, checked by `safeReturnPath()`                          | Survives a reload of the login page. Only in-app paths are accepted, so a crafted link can't redirect to another site (open redirect)                                                             | Router `state` (lost on reload)                                                       |
+| Login validated with the contract's Zod schema                                | One set of rules for the browser and the API                                                                                                                                                      | Hand-written checks in the form                                                       |
+| Demo password read from `SEED_DEMO_PASSWORD` in the root `.env` at build time | One value for the seed and the buttons. It is public by design, so being in the bundle is fine                                                                                                    | A `demo-login` API endpoint (a contract change), or a second variable to keep in sync |
+| `createTestHost` in a `/testing` subpath                                      | Tests and standalone remotes get real permission rules; app bundles don't include test helpers                                                                                                    | A mock per test file                                                                  |
+
+### Libraries added
+
+| Library                              | What it solves                                                                                                      | Main alternative                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `react-router` 8.5.1 (pinned)        | Routes, redirects, `NavLink` active state. The declarative API (`Routes`, `Route`, `Navigate`) is unchanged from v7 | TanStack Router                      |
+| `react-hook-form` 7.91.0 (pinned)    | Form state and validation without re-rendering on every keystroke                                                   | Formik, plain `useState`             |
+| `@hookform/resolvers` 5.9.2 (pinned) | Connects a Zod schema to React Hook Form                                                                            | Validating by hand in `handleSubmit` |
+
+Versions are pinned exactly and are at least two weeks old. React Router 8.5.2 and `@hookform/resolvers` 7.x were days old; the resolvers package shipped two major versions in October and November.
+
+### Problems found while building
+
+- **Navigating between sections kept showing the first remote.** Each route rendered a `RemoteSlot` in the same place with the same key (the user id), so React reused the instance, and the slot kept the remote it loaded first. The URL said `/rulesets` while the simulator stayed on screen. Unit tests missed it because no test moved between sections; the browser run caught it. Fixed by keying the slot by remote and user. A new test fails without the fix and passes with it.
+- **A heading inside a heading.** The login card put an `<h1>` inside `CardTitle`, which is an `<h3>`. A test failed on the duplicate heading. Fixed by giving `CardTitle` an `as` prop for the heading level (in `libs/ui`, with a test).
+- **npm widened the chosen versions** to the newest releases when installing. Fixed by pinning exact versions in `apps/shell/package.json`.
+- **First load of a remote in dev reloads the page once** while Vite bundles its dependencies. Harmless, dev only, but it can make a quick test look like it failed.
+
+### Worth knowing for interviews
+
+- **"Where is the access token stored?"** In a closure variable inside the shell's session module. It isn't on `window`, in React state that devtools can browse, or in storage. A reload loses it on purpose; the `HttpOnly` refresh cookie gets a new one.
+- **"What does StrictMode have to do with auth?"** Double-invoked effects plus rotating refresh tokens equals a revoked session in development. Start side effects outside React or make them idempotent.
+- **"How do micro frontends get auth?"** Through one prop, `host = { user, can, api }`. Remotes can't see tokens, and testing a remote is just rendering it with `createTestHost('VIEWER')`.
+- **"How do you stop the login page flashing?"** A loading state until the first refresh resolves.
+- **"What is an open redirect?"** A `?returnTo=https://evil.example` that sends users off-site after a trusted login page. `safeReturnPath()` accepts only in-app paths.
+- **React keys aren't just for lists.** Same component type, same position, same key means React keeps the instance and its state. Change the key to get a fresh one.

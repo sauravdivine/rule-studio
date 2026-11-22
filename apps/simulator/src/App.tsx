@@ -7,12 +7,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@rule-studio/ui';
+import type { HostProps } from '@rule-studio/host';
 import './styles.css';
 
 // Placeholder until spec 007 (simulator).
-export function App() {
+export function App({ host }: HostProps) {
   return (
-    <Card id="simulator" data-testid="simulator">
+    <Card data-testid="simulator">
       <CardHeader>
         <div className="flex items-center gap-2">
           <CardTitle>Simulator</CardTitle>
@@ -29,9 +30,11 @@ export function App() {
         <Badge variant="approve">Approve</Badge>
         <Badge variant="reject">Reject</Badge>
         <Badge variant="refer">Refer</Badge>
-        <Button variant="outline" size="sm" className="ml-auto" disabled>
-          Run simulation
-        </Button>
+        {host.can('simulation:run') && (
+          <Button variant="outline" size="sm" className="ml-auto" disabled>
+            Run simulation
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

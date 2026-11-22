@@ -40,6 +40,23 @@ describe('Badge', () => {
   );
 });
 
+describe('CardTitle', () => {
+  it('is an h3 unless the page needs another level', () => {
+    render(
+      <>
+        <CardTitle>Ruleset</CardTitle>
+        <CardTitle as="h1">Sign in</CardTitle>
+      </>,
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Ruleset', level: 3 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Sign in', level: 1 }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('Spinner', () => {
   it('announces a label', () => {
     render(<Spinner label="Loading rulesets" />);

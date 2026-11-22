@@ -20,18 +20,21 @@ export function CardHeader({ className, ...props }: ComponentProps<'div'>) {
 }
 
 // A heading element so cards show up in a screen reader's headings list.
+// Defaults to h3; pass `as` to fit the page's outline (a login card is the
+// page's h1). Headings must not skip levels or nest.
 export function CardTitle({
   className,
   children,
+  as: Heading = 'h3',
   ...props
-}: ComponentProps<'h3'>) {
+}: ComponentProps<'h3'> & { as?: 'h1' | 'h2' | 'h3' | 'h4' }) {
   return (
-    <h3
+    <Heading
       className={cn('font-semibold leading-none tracking-tight', className)}
       {...props}
     >
       {children}
-    </h3>
+    </Heading>
   );
 }
 

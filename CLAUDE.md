@@ -37,7 +37,7 @@ Specs are numbered in build order:
 | #   | Spec                                        | Status             |
 | --- | ------------------------------------------- | ------------------ |
 | 001 | Ruleset data model                          | Approved           |
-| 002 | Auth                                        | Approved           |
+| 002 | Auth                                        | Built; Mac check   |
 | 003 | Rulesets API                                | Decisions captured |
 | 004 | UI foundation: design tokens and components | Built              |
 | 005 | Rule editor                                 | Not started        |
@@ -81,6 +81,8 @@ docs/             project docs, including commands.md (every command, what it do
 - Styling: Tailwind CSS v4 utility classes using the design tokens (`bg-primary`, `text-muted-foreground`, `border`). Never hard-code a colour; add or change a token in `libs/ui/src/styles/tokens.css` instead. Merge class names with `cn()`.
 - CSS loading: the shell imports `@rule-studio/ui/styles/global.css` (reset, tokens, themes) once. Each remote's exposed `App` imports its own `src/styles.css`, which uses `remote.css` (utilities only); a remote's standalone `bootstrap.tsx` also imports `global.css`.
 - Theme: `<html data-theme="light|dark">`, set by `useTheme()` / `ThemeToggle` and by the inline script in `apps/shell/index.html`. Never put the theme in React context.
+- Auth lives only in the shell (`apps/shell/src/auth`). A remote's exposed `App` takes `HostProps` from `@rule-studio/host` and uses `host.can()` to hide actions and `host.api` to call the API. Remotes never read tokens, cookies or the shell's code. Test remotes with `createTestHost(role)` from `@rule-studio/host/testing`.
+- Apps keep test config in `vitest.config.mts`, apart from `vite.config.mts`, so the federation plugin never runs in tests.
 - Every new component in `libs/ui` gets a `*.stories.tsx` and a `*.spec.tsx` that includes an axe check (`axeViolations`).
 - Tests: Vitest and React Testing Library next to the code as `*.spec.tsx`.
 

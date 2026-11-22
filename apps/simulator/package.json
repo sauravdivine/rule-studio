@@ -11,7 +11,8 @@
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@rule-studio/ui": "*"
+    "@rule-studio/ui": "*",
+    "@rule-studio/host": "*"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.15.5",

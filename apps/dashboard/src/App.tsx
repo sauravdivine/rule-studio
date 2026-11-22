@@ -7,19 +7,21 @@ import {
   CardTitle,
   Skeleton,
 } from '@rule-studio/ui';
+import type { HostProps } from '@rule-studio/host';
 import './styles.css';
 
 // Placeholder until spec 008 (dashboard). The skeletons hint at the layout to come.
-export function App() {
+export function App({ host }: HostProps) {
   return (
-    <Card id="dashboard" data-testid="dashboard">
+    <Card data-testid="dashboard">
       <CardHeader>
         <div className="flex items-center gap-2">
           <CardTitle>Dashboard</CardTitle>
           <Badge variant="outline">Coming in spec 008</Badge>
         </div>
         <CardDescription>
-          Decision volumes and outcome rates per ruleset.
+          Decision volumes and outcome rates per ruleset, for{' '}
+          {host.user.displayName}.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-3">

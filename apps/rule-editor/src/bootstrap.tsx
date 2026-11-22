@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 // that the shell normally provides.
 import '@rule-studio/ui/styles/global.css';
 import { applyTheme, readThemePreference } from '@rule-studio/ui';
+import { createTestHost } from '@rule-studio/host/testing';
 import { App } from './App';
 
 applyTheme(readThemePreference());
@@ -13,6 +14,8 @@ if (!container) throw new Error('#root element not found');
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    {/* No shell, so no sign-in: a demo editor with no API. Inside the shell,
+        the real host comes from the signed-in session. */}
+    <App host={createTestHost('EDITOR')} />
   </StrictMode>,
 );
