@@ -6,15 +6,27 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/throttler": "^6.8.0",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "@rule-studio/permissions": "*",
+    "@rule-studio/shared-types": "*",
+    "argon2": "^0.45.2",
+    "cookie-parser": "^1.4.7",
+    "jose": "^6.2.18",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0",
-    "@rule-studio/shared-types": "*",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1",
     "supertest": "^7.3.2",
-    "@types/supertest": "^7.2.1"
+    "tsx": "^4.23.15"
   }
 }

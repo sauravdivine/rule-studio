@@ -5,13 +5,15 @@ import {
   Post,
   type INestApplication,
 } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
 import { zLoginRequest, type LoginRequest } from '@rule-studio/shared-types';
 import request from 'supertest';
+import { Public } from '../auth/decorators/public.decorator';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe';
-import { AppModule } from './app.module';
+import { createTestApp } from '../test/test-app';
 
 // A throwaway controller, only for this test, to exercise the pipe and filter end to end.
+// Public, so these tests check the pipe and filter without needing to sign in.
+@Public()
 @Controller('test')
 class TestController {
   @Post('echo')
@@ -29,18 +31,7 @@ describe('API skeleton (HTTP)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        AppModule.register({
-          NODE_ENV: 'test',
-          PORT: 0,
-          DATABASE_URL: 'postgresql://unused:unused@localhost:5432/unused',
-        }),
-      ],
-      controllers: [TestController],
-    }).compile();
-    app = moduleRef.createNestApplication({ logger: false });
-    await app.init();
+    ({ app } = await createTestApp({ controllers: [TestController] }));
   });
 
   afterAll(async () => {

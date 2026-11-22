@@ -1,7 +1,7 @@
 # 002 · Auth: implementation plan
 
 **Spec:** [002-auth.md](002-auth.md) (approved)
-**Status:** Approved (19 Nov 2026), in progress
+**Status:** Approved (19 Nov 2026). Tasks 0–7 done (22 Nov 2026); tasks 8–9 wait for spec 004.
 
 Each task is one reviewable step. After each: checks pass, the owner reviews, then commits. No task starts before the previous one is reviewed.
 
@@ -18,11 +18,7 @@ Each task is one reviewable step. After each: checks pass, the owner reviews, th
 
 ## Who does what
 
-Follows "Learning mode" in `CLAUDE.md`:
-
-- The owner runs installs, Docker, Prisma migrations and seeds, Nx generators and the dev servers; each command comes with a one-line explanation.
-- The AI writes most code, runs routine checks, and flags pieces worth the owner writing as they come up during implementation, then guides and reviews.
-- The owner reviews and commits each task.
+Updated 21 Nov 2026: from Task 4, the AI builds the remaining tasks in one go and then summarises them (see "How we work" in `CLAUDE.md`). The owner runs the commands the AI cannot run on the Mac (installs, Docker, migrations) and commits.
 
 ## Sequencing (decided 20 Nov 2026)
 

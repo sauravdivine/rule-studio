@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app/app.module';
+import { configureApp } from './app/configure-app';
 import { parseEnv } from './common/config/env';
 
 async function bootstrap() {
@@ -13,10 +13,8 @@ async function bootstrap() {
   }
   const config = parseEnv(process.env); // throws, and stops startup, if anything is wrong
 
-  const app = await NestFactory.create<NestExpressApplication>(
-    AppModule.register(config),
-  );
-  app.disable('x-powered-by'); // don't advertise the framework
+  const app = await NestFactory.create(AppModule.register(config));
+  configureApp(app);
   app.enableShutdownHooks(); // close cleanly on Ctrl+C or a container stop
 
   // No global "/api" prefix: routes declare their full path, exactly as in

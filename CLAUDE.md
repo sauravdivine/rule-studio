@@ -16,7 +16,7 @@ Every feature goes through three gates, in order. Do not skip ahead.
 
 1. **Spec.** Draft `specs/NNN-name.md` from the owner's brief, then stop. Discuss it, raise open questions, and revise until the owner marks it **Approved**. No plan and no code before that.
 2. **Plan.** Read the approved spec and anything it links to. Produce a numbered task list and stop. Build nothing until the owner approves the plan.
-3. **Execute in steps.** Build one task at a time, and stop after each for review. Each acceptance criterion in the spec gets at least one test.
+3. **Execute in one go.** Build the whole approved plan without pausing between tasks. Each acceptance criterion in the spec gets at least one test. Then report to the owner: a short step-by-step summary of what was built and why, every library added (what it solves, the main alternative), and anything worth explaining in an interview. Write the same into `specs/NNN-name.summary.md`, next to the spec and its plan, and commit it with the code: what was built, how a request flows, decisions and why, libraries added, problems found while building, and interview talking points. If a spec is built in parts, add a section to the same file for each part.
 
 Rules that apply throughout:
 
@@ -26,11 +26,10 @@ Rules that apply throughout:
 
 ### Learning mode
 
-The owner is building this project to learn, not only to finish it.
+The owner is building this project to learn and to explain it in interviews.
 
-- **The owner runs setup and infrastructure commands**: installs, Docker, migrations, seeds, generators, starting servers. Give each command with a one-line explanation of what it does. Routine checks (lint, typecheck, tests) may be run by the agent.
-- **Flag "write this yourself" moments.** While implementing, when a piece is core to the design or likely to come up in an interview (for example token rotation, the single-flight refresh, the rule engine), stop and say so before writing it. Then guide the owner: explain the idea, give hints or a skeleton rather than the full solution, and review what they write.
-- Explain the why behind non-obvious code, briefly, as you go.
+- **Commands the agent cannot run** (for example installs, Docker or migrations on the owner's machine) are listed at the end of the work, each with a one-line explanation.
+- Explain the why behind non-obvious code, briefly, in the end-of-plan summary.
 - **Keep `docs/commands.md` current.** When a task introduces a command worth knowing (a new tool, script, generator or fix), add it to the right section of `docs/commands.md`, with what it does, in the same commit.
 
 Specs are numbered in build order:
@@ -65,7 +64,7 @@ libs/
   host/           HostProps type the shell passes to remotes: { user, can, api } (spec 002)
 contracts/        JSON Schemas and the OpenAPI spec, the source of truth
   examples/       example payloads, used as test fixtures
-specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md)
+specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md) and build summary (NNN-name.summary.md)
 docs/             project docs, including commands.md (every command, what it does)
 ```
 

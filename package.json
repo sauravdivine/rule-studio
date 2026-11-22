@@ -4,7 +4,8 @@
   "license": "MIT",
   "scripts": {
     "contracts:validate": "node scripts/validate-contracts.mjs",
-    "contracts:types": "node scripts/generate-types.mjs"
+    "contracts:types": "node scripts/generate-types.mjs",
+    "jwt:keys": "node scripts/generate-jwt-key.mjs"
   },
   "private": true,
   "devDependencies": {

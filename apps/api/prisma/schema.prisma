@@ -1,0 +1,51 @@
+// Database schema for the API (spec 002). After changing it:
+//   npx nx run api:db-migrate   creates and applies a migration
+// The client is generated into src/generated/prisma (git-ignored) by `nx run api:prisma-generate`,
+// which build, serve, test and typecheck run automatically.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  /// Always stored lower-case, so sign-in is case-insensitive.
+  email         String         @unique
+  displayName   String         @map("display_name")
+  role          Role
+  /// Argon2id hash. The password itself is never stored.
+  passwordHash  String         @map("password_hash")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+/// One row per refresh token ever issued. Only a SHA-256 hash of the token is stored.
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  /// Set when the token is exchanged for a new one. A second use means it was stolen.
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  /// Set on logout, or when reuse is detected.
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

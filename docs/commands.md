@@ -10,7 +10,7 @@ A normal working session, start to finish:
 
 1. `git pull`: get the latest from GitHub, if you worked on another machine.
 2. `docker compose up -d`: start Postgres in the background.
-3. `npx nx serve api`: start the API on port 3000.
+3. `npx nx serve api`: start the API on port 3000. (First time only: see "Database and API setup" below.)
 4. `npx nx run-many -t serve -p shell rule-editor simulator dashboard`: start the frontend; open http://localhost:4200.
 5. Make changes. Before committing, run `npx nx run-many -t test typecheck lint`.
 6. `git add .`, then `git commit -m "..."`, then `git push`.
@@ -116,6 +116,47 @@ Postgres runs in a container defined in `docker-compose.yml`. Its settings come 
 
 **If port 5432 is taken** by another Postgres: change `POSTGRES_PORT` and the port inside `DATABASE_URL` in `.env` (for example to 5433), then `docker compose up -d` again.
 
+## Database and API setup (spec 002)
+
+The API's database layer is Prisma. Its schema is `apps/api/prisma/schema.prisma`; its config (which reads `.env`) is `apps/api/prisma.config.ts`. These Nx targets wrap the Prisma commands so you can run them from the repo root.
+
+**First-time setup**, in order:
+
+1. `docker compose up -d`: Postgres must be running.
+2. `npm run jwt:keys`: creates the access-token signing key in `.env`.
+3. `npx nx run api:db-migrate --name=init`: creates the first migration from the schema and applies it.
+4. `npx nx run api:db-seed`: adds the three demo users.
+5. `npx nx serve api`: start the API.
+
+| Command                                           | What it does                                                                                                                                                                                  |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run jwt:keys`                                | Generates an RS256 key pair and writes the private key (base64 PEM) and a key id into `.env`. Refuses to replace an existing key; add `-- --force` to rotate it (signs everyone out)          |
+| `npx nx run api:prisma-generate`                  | Generates the typed Prisma client into `apps/api/src/generated/prisma` (git-ignored). Build, serve, test, typecheck and lint run it automatically                                             |
+| `npx nx run api:db-migrate --name=<what-changed>` | `prisma migrate dev`: compares the schema with the database, writes a new SQL migration in `apps/api/prisma/migrations/`, and applies it. Run after every schema change; commit the migration |
+| `npx nx run api:db-deploy`                        | `prisma migrate deploy`: applies migrations that haven't run yet, without creating new ones. What deployment uses                                                                             |
+| `npx nx run api:db-seed`                          | `prisma db seed`: creates or updates the demo users `viewer@`, `editor@` and `admin@rulestudio.dev`, with the password from `SEED_DEMO_PASSWORD`                                              |
+| `npx nx run api:db-studio`                        | Opens Prisma Studio, a browser UI to look at and edit the data                                                                                                                                |
+| `npx nx test api`                                 | Runs the API tests. Before they start, a fresh test database (`rulestudio_test`) is created and every migration is applied, so tests never touch your dev data                                |
+
+**Trying the auth API with curl** (with the API running):
+
+```bash
+# Sign in; -c saves the refresh cookie to a file
+curl -i -c /tmp/rs.txt -X POST http://localhost:3000/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"editor@rulestudio.dev","password":"rulestudio-demo"}'
+
+# Use the accessToken from that response
+curl -i http://localhost:3000/api/auth/me -H 'authorization: Bearer <accessToken>'
+
+# Refresh (-b sends the saved cookie, -c saves the rotated one), then sign out
+curl -i -b /tmp/rs.txt -c /tmp/rs.txt -X POST http://localhost:3000/api/auth/refresh
+curl -i -b /tmp/rs.txt -c /tmp/rs.txt -X POST http://localhost:3000/api/auth/logout
+
+# The public signing key
+curl http://localhost:3000/.well-known/jwks.json
+```
+
 ## Terminal basics and checking the API
 
 | Command                                  | What it does                                                                                                              |
@@ -134,13 +175,19 @@ Postgres runs in a container defined in `docker-compose.yml`. Its settings come 
 
 Problems hit so far, and the fix:
 
-| Symptom                                                                | Cause                                                               | Fix                                                                |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `dyld: Library not loaded ... libicui18n` when running `npm` or `node` | Homebrew updated a library Node depends on                          | `brew update && brew upgrade node` (or `brew reinstall node`)      |
-| `npm install` fails with an internal error                             | npm 10 bug with this workspace                                      | `npm i -g npm@11`                                                  |
-| `The current branch main has no upstream branch`                       | First push of a branch                                              | `git push -u origin main`                                          |
-| `zsh: command not found: docker`                                       | No Docker engine installed                                          | `brew install --cask orbstack`, then open OrbStack once            |
-| `The workspace is out of sync`                                         | A project gained a dependency on another                            | `npx nx sync`                                                      |
-| API stops at startup with `Invalid environment configuration`          | A variable in `.env` is missing or malformed (the message names it) | Fix it in `.env`, or `cp .env.example .env` if the file is missing |
-| `port is already allocated` from Docker                                | Something else uses port 5432                                       | Change `POSTGRES_PORT` and `DATABASE_URL` in `.env`                |
-| `Debugger listening on ws://localhost:9229`                            | Normal: `nx serve api` turns on Node's debugger                     | Nothing to fix                                                     |
+| Symptom                                                                | Cause                                                                   | Fix                                                                             |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `dyld: Library not loaded ... libicui18n` when running `npm` or `node` | Homebrew updated a library Node depends on                              | `brew update && brew upgrade node` (or `brew reinstall node`)                   |
+| `npm install` fails with an internal error                             | npm 10 bug with this workspace                                          | `npm i -g npm@11`                                                               |
+| `The current branch main has no upstream branch`                       | First push of a branch                                                  | `git push -u origin main`                                                       |
+| `zsh: command not found: docker`                                       | No Docker engine installed                                              | `brew install --cask orbstack`, then open OrbStack once                         |
+| `The workspace is out of sync`                                         | A project gained a dependency on another                                | `npx nx sync`                                                                   |
+| API stops at startup with `Invalid environment configuration`          | A variable in `.env` is missing or malformed (the message names it)     | Fix it in `.env`, or `cp .env.example .env` if the file is missing              |
+| `port is already allocated` from Docker                                | Something else uses port 5432                                           | Change `POSTGRES_PORT` and `DATABASE_URL` in `.env`                             |
+| `Debugger listening on ws://localhost:9229`                            | Normal: `nx serve api` turns on Node's debugger                         | Nothing to fix                                                                  |
+| API won't start: `JWT_PRIVATE_KEY: ...`                                | No signing key in `.env` yet                                            | `npm run jwt:keys`                                                              |
+| API tests: `Cannot reach Postgres`                                     | Postgres isn't running                                                  | `docker compose up -d`                                                          |
+| API tests: `No migrations found`                                       | The first migration hasn't been created                                 | `npx nx run api:db-migrate --name=init`                                         |
+| `The table "users" does not exist` when signing in                     | Migrations haven't been applied to the dev database                     | `npx nx run api:db-migrate`                                                     |
+| `npm warn install-scripts ... not yet covered by allowScripts`         | npm 11 no longer runs packages' install scripts unless you approve them | Safe to ignore for now; everything we use works without them                    |
+| `Cannot find module '../src/generated/prisma/client'`                  | The Prisma client hasn't been generated yet                             | `npx nx run api:prisma-generate` (Nx targets that need it run it automatically) |

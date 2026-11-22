@@ -137,16 +137,16 @@ Navigation and buttons use `can(...)`, so a user never sees an action that would
 
 ## Acceptance criteria
 
-- [ ] `contracts/openapi.yaml` describes every auth endpoint, and the API matches it.
+- [x] `contracts/openapi.yaml` describes every auth endpoint, and the API matches it.
 - [ ] A seeded user can sign in, reload the page and stay signed in, and sign out.
 - [ ] An expired access token is refreshed automatically without the user noticing.
-- [ ] Reusing an old refresh token is rejected and revokes that user's sessions.
-- [ ] Two parallel 401s trigger exactly one refresh call.
-- [ ] Wrong password and unknown email return the same 401 response.
-- [ ] The sixth login attempt within a minute returns 429.
-- [ ] A viewer calling an editor-only endpoint gets 403; with no token, 401.
+- [x] Reusing an old refresh token is rejected and revokes that user's sessions.
+- [x] Two parallel 401s trigger exactly one refresh call.
+- [x] Wrong password and unknown email return the same 401 response.
+- [x] The sixth login attempt within a minute returns 429.
+- [x] A viewer calling an editor-only endpoint gets 403; with no token, 401.
 - [ ] No token is ever written to localStorage or sessionStorage.
-- [ ] A token signed by the API validates against `/.well-known/jwks.json`.
+- [x] A token signed by the API validates against `/.well-known/jwks.json`.
 - [ ] Unauthenticated visits to any route redirect to `/login` and return afterwards.
 - [ ] A remote rendered with a viewer `host` shows no edit or publish actions.
 - [ ] Each criterion above has an automated test: Vitest and Supertest for the API, Vitest and React Testing Library for the frontend.

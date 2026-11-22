@@ -8,6 +8,23 @@ export const envSchema = z.object({
     .default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+
+  // RS256 signing key for access tokens: a PKCS#8 PEM, base64-encoded onto one line.
+  // Generate a local one with `npm run jwt:keys`.
+  JWT_PRIVATE_KEY: z
+    .string()
+    .min(1)
+    .transform((value) => Buffer.from(value, 'base64').toString('utf8'))
+    .refine((pem) => pem.includes('-----BEGIN PRIVATE KEY-----'), {
+      message: 'must be a base64-encoded PKCS#8 PEM private key',
+    }),
+  // Key id, put in every token header and in the JWKS, so keys can be rotated later.
+  JWT_KEY_ID: z.string().min(1),
+
+  ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().min(60).default(900),
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().min(1).default(7),
+  // Sign-in attempts allowed per minute, per IP and per email (spec 002).
+  LOGIN_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(1).default(5),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
