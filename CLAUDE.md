@@ -39,7 +39,7 @@ Specs are numbered in build order:
 | 001 | Ruleset data model                          | Approved           |
 | 002 | Auth                                        | Approved           |
 | 003 | Rulesets API                                | Decisions captured |
-| 004 | UI foundation: design tokens and components | Not started        |
+| 004 | UI foundation: design tokens and components | Approved           |
 | 005 | Rule editor                                 | Not started        |
 | 006 | Rule engine                                 | Not started        |
 | 007 | Simulator                                   | Not started        |
