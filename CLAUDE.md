@@ -39,7 +39,7 @@ Specs are numbered in build order:
 | 001 | Ruleset data model                          | Approved           |
 | 002 | Auth                                        | Approved           |
 | 003 | Rulesets API                                | Decisions captured |
-| 004 | UI foundation: design tokens and components | Approved           |
+| 004 | UI foundation: design tokens and components | Built              |
 | 005 | Rule editor                                 | Not started        |
 | 006 | Rule engine                                 | Not started        |
 | 007 | Simulator                                   | Not started        |
@@ -77,6 +77,11 @@ docs/             project docs, including commands.md (every command, what it do
 - Forms: React Hook Form with Zod. Validation rules must match the JSON Schema in `contracts/`.
 - Every data view handles loading, empty, error and success states.
 - Accessible by default: semantic HTML, labelled inputs, keyboard support, visible focus.
+- UI comes from `@rule-studio/ui` (spec 004). Never hand-roll a button, input, card or alert in an app; if a component is missing, add it to `libs/ui` with a story and tests.
+- Styling: Tailwind CSS v4 utility classes using the design tokens (`bg-primary`, `text-muted-foreground`, `border`). Never hard-code a colour; add or change a token in `libs/ui/src/styles/tokens.css` instead. Merge class names with `cn()`.
+- CSS loading: the shell imports `@rule-studio/ui/styles/global.css` (reset, tokens, themes) once. Each remote's exposed `App` imports its own `src/styles.css`, which uses `remote.css` (utilities only); a remote's standalone `bootstrap.tsx` also imports `global.css`.
+- Theme: `<html data-theme="light|dark">`, set by `useTheme()` / `ThemeToggle` and by the inline script in `apps/shell/index.html`. Never put the theme in React context.
+- Every new component in `libs/ui` gets a `*.stories.tsx` and a `*.spec.tsx` that includes an axe check (`axeViolations`).
 - Tests: Vitest and React Testing Library next to the code as `*.spec.tsx`.
 
 ## Backend conventions (from spec 002 onwards)
@@ -103,6 +108,7 @@ npx nx run-many -t serve -p shell rule-editor simulator dashboard
 npx nx run-many -t build
 npx nx run-many -t lint test typecheck
 npm run contracts:types           # regenerate libs/shared-types from contracts/
+npx nx storybook ui               # component workshop on :6006 (spec 004)
 docker compose up -d              # Postgres (from spec 002)
 npx nx serve api                  # API on :3000 (from spec 002)
 ```

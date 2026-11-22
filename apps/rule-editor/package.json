@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@rule-studio/ui": "*",
+    "lucide-react": "^1.77.0"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.15.5",

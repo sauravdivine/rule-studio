@@ -1,56 +1,86 @@
-import { Component, Suspense, type ReactNode } from 'react';
-import { lazyProvider } from './mf';
+import { Component, Suspense, type ComponentType } from 'react';
+import { AppShell, ErrorState, Spinner, ThemeToggle } from '@rule-studio/ui';
+import { lazyProvider, resetProvider } from './mf';
 
-// ProviderBoundary catches the lazy() rejection that fires when a provider's
-// remoteEntry.js can't be fetched (provider not running, network error,
-// etc.). Without it any one missing provider unmounts the whole consumer
-// tree. React has no built-in functional error boundary so this is a class.
-// Wrap each <ProviderBoundary> in your router of choice if you need routing.
-class ProviderBoundary extends Component<
-  { children: ReactNode; name: string },
-  { error: Error | null }
+// RemoteSlot loads one remote and contains its failures. If remoteEntry.js
+// can't be fetched (remote not running, network error) or the remote throws
+// while rendering, only this slot shows an error; the rest of the app works.
+// React has no hook-based error boundary, so this is a class.
+//
+// "Try again" has to clear two caches: the federation runtime's (resetProvider)
+// and React's, because React.lazy remembers a failed import forever, so the
+// slot needs a brand-new lazy() component.
+class RemoteSlot extends Component<
+  { alias: string; name: string },
+  { error: Error | null; Remote: ComponentType }
 > {
-  state = { error: null as Error | null };
+  state = { error: null, Remote: lazyProvider(this.props.alias, 'App') };
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
+  private retry = () => {
+    resetProvider(this.props.alias);
+    this.setState({
+      error: null,
+      Remote: lazyProvider(this.props.alias, 'App'),
+    });
+  };
   render() {
-    if (this.state.error) {
+    const { error, Remote } = this.state;
+    if (error) {
       return (
-        <div role="alert">
-          <p>
-            Provider &quot;{this.props.name}&quot; unavailable:{' '}
-            {this.state.error.message}
-          </p>
-        </div>
+        <ErrorState
+          title={`${this.props.name} is unavailable`}
+          description="This part of Rule Studio could not load. The rest of the app still works."
+          onRetry={this.retry}
+        />
       );
     }
     return (
-      <Suspense fallback={<p>Loading {this.props.name}...</p>}>
-        {this.props.children}
+      <Suspense fallback={<Spinner label={`Loading ${this.props.name}`} />}>
+        <Remote />
       </Suspense>
     );
   }
 }
 
-const ProviderRuleEditor = lazyProvider('rule-editor', 'App');
-const ProviderSimulator = lazyProvider('simulator', 'App');
-const ProviderDashboard = lazyProvider('dashboard', 'App');
-
+// Until routing arrives (spec 002, task 8), the shell shows all three remotes
+// on one page, and the nav links jump to each section.
 export function App() {
   return (
-    <main>
-      <h1>shell</h1>
-      <ProviderBoundary name="rule-editor">
-        <ProviderRuleEditor />
-      </ProviderBoundary>
-      <ProviderBoundary name="simulator">
-        <ProviderSimulator />
-      </ProviderBoundary>
-      <ProviderBoundary name="dashboard">
-        <ProviderDashboard />
-      </ProviderBoundary>
-    </main>
+    <AppShell
+      brand="Rule Studio"
+      nav={
+        <>
+          <a
+            className="rounded-md px-3 py-1.5 hover:bg-accent hover:text-accent-foreground"
+            href="#rule-editor"
+          >
+            Rulesets
+          </a>
+          <a
+            className="rounded-md px-3 py-1.5 hover:bg-accent hover:text-accent-foreground"
+            href="#simulator"
+          >
+            Simulator
+          </a>
+          <a
+            className="rounded-md px-3 py-1.5 hover:bg-accent hover:text-accent-foreground"
+            href="#dashboard"
+          >
+            Dashboard
+          </a>
+        </>
+      }
+      actions={<ThemeToggle />}
+    >
+      <h1 className="sr-only">Rule Studio</h1>
+      <div className="grid gap-6">
+        <RemoteSlot alias="rule-editor" name="Rule editor" />
+        <RemoteSlot alias="simulator" name="Simulator" />
+        <RemoteSlot alias="dashboard" name="Dashboard" />
+      </div>
+    </AppShell>
   );
 }
 

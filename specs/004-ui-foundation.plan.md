@@ -1,7 +1,7 @@
 # 004 · UI foundation: implementation plan
 
 **Spec:** [004-ui-foundation.md](004-ui-foundation.md) (approved)
-**Status:** Awaiting approval
+**Status:** Approved and built (22 Nov 2026). What was built: [004-ui-foundation.summary.md](004-ui-foundation.summary.md)
 
 Built in one go once approved (see "How we work" in `CLAUDE.md`), then summarised in `004-ui-foundation.summary.md`. Each task lists the interview questions it relates to.
 

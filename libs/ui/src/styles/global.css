@@ -1,0 +1,23 @@
+/*
+ * The full stylesheet: CSS reset, tokens, theme and utilities. Loaded once by the shell,
+ * and by a remote only when it runs on its own (its standalone bootstrap).
+ */
+@import 'tailwindcss';
+@import './tokens.css';
+@import './theme.css';
+
+/* Classes used by libs/ui components. */
+@source '../';
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  /* A visible focus ring on everything focusable, for keyboard users. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  * {
+    @apply border-border;
+  }
+}

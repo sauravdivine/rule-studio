@@ -30,6 +30,25 @@ const PROVIDERS: Array<{ alias: string; name: string; entry: string }> = [
 // `Cannot use import statement outside a module` (#RUNTIME-001).
 registerRemotes(PROVIDERS.map((remote) => ({ ...remote, type: 'module' })));
 
+// The federation runtime remembers a remoteEntry.js that failed to load and
+// keeps returning that failure. To retry, register the remote again with
+// `force: true` (drops the runtime's cache) and a fresh query string (so the
+// browser doesn't reuse its own failed import of the same URL either).
+export function resetProvider(alias: string): void {
+  const remote = PROVIDERS.find((candidate) => candidate.alias === alias);
+  if (!remote) throw new Error(`Unknown remote "${alias}"`);
+  registerRemotes(
+    [
+      {
+        ...remote,
+        type: 'module',
+        entry: `${remote.entry}?retry=${Date.now()}`,
+      },
+    ],
+    { force: true },
+  );
+}
+
 export function lazyProvider<Props = unknown>(
   alias: string,
   exposeName: string,

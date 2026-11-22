@@ -10,6 +10,8 @@ export default [
       '**/out-tsc',
       '**/vitest.config.*.timestamp*',
       '**/@mf-types',
+      '**/.mf',
+      '**/storybook-static',
       'apps/api/src/generated',
     ],
   },

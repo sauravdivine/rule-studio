@@ -1,0 +1,3 @@
+/* The shell loads the full stylesheet (reset, tokens, themes) once, for the whole page. */
+@import '@rule-studio/ui/styles/global.css';
+@source './';

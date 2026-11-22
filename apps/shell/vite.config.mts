@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { federation } from '@module-federation/vite';
 import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
 
@@ -21,6 +22,7 @@ export default defineConfig({
   preview: { port: PORT, strictPort: true },
   build: { target: 'chrome89' },
   plugins: [
+    tailwindcss(),
     federation({
       name: 'shell',
       // No build-time `remotes:` block - the consumer registers them at

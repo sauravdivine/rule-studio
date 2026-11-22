@@ -1,6 +1,6 @@
 # 004 · UI foundation: design tokens and components
 
-**Status:** Approved (22 Nov 2026)
+**Status:** Built (22 Nov 2026). See [004-ui-foundation.summary.md](004-ui-foundation.summary.md).
 **Depends on:** nothing. Spec 002's tasks 8–9 (login page, routing, host prop) are built on top of it.
 
 ## Goal
@@ -84,13 +84,13 @@ Icons: **lucide-react** (shadcn/ui's default set).
 
 ## Acceptance criteria
 
-- [ ] `libs/ui` exports the components above, built on the tokens; no component hard-codes a colour.
-- [ ] The tokens are defined once, in `libs/ui`, with light and dark values; changing one value changes every app.
-- [ ] Light, dark and system themes work, and the choice survives a reload.
-- [ ] The shell renders a page using `libs/ui` components, and each remote renders one too, all styled correctly when loaded inside the shell **and** when run on their own.
-- [ ] Remotes do not ship the CSS reset or token definitions when loaded in the shell.
-- [ ] Every colour pair used for text meets WCAG AA contrast, checked by a test.
-- [ ] Each component has tests for its behaviour and accessibility (role, label, keyboard where relevant).
+- [x] `libs/ui` exports the components above, built on the tokens; no component hard-codes a colour.
+- [x] The tokens are defined once, in `libs/ui`, with light and dark values; changing one value changes every app.
+- [x] Light, dark and system themes work, and the choice survives a reload.
+- [x] The shell renders a page using `libs/ui` components, and each remote renders one too, all styled correctly when loaded inside the shell **and** when run on their own.
+- [x] Remotes do not ship the CSS reset or token definitions when loaded in the shell.
+- [x] Every colour pair used for text meets WCAG AA contrast, checked by a test.
+- [x] Each component has tests for its behaviour and accessibility (role, label, keyboard where relevant).
 
 ## Out of scope
 

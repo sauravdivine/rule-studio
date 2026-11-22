@@ -1,0 +1,82 @@
+/*
+ * Rule Studio design tokens (spec 004).
+ * The single source of truth for colour, radius and shadow. Components and apps use them
+ * through Tailwind classes (bg-primary, text-muted-foreground, rounded-md ...), never directly
+ * as raw values. Loaded once, by the shell (global.css). Remotes never redefine them.
+ *
+ * Colours are OKLCH: perceptually even, so lightness steps look even. Every text/background
+ * pair is checked against WCAG AA (4.5:1) by src/styles/contrast.spec.ts.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Neutral surfaces and text */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.21 0.006 285.885);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.442 0.017 285.786);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --accent: oklch(0.962 0.018 272.314);
+  --accent-foreground: oklch(0.359 0.144 278.697);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.871 0.006 286.286);
+
+  /* Brand: indigo */
+  --primary: oklch(0.511 0.262 276.966);
+  --primary-foreground: oklch(1 0 0);
+  --ring: oklch(0.585 0.233 277.117);
+
+  /* Status */
+  --destructive: oklch(0.505 0.213 27.518);
+  --destructive-foreground: oklch(1 0 0);
+  --success: oklch(0.448 0.119 151.328);
+  --success-foreground: oklch(1 0 0);
+  --warning: oklch(0.473 0.137 46.201);
+  --warning-foreground: oklch(1 0 0);
+
+  /* Decisions (spec 001): the same colour for a decision everywhere in the app */
+  --approve: var(--success);
+  --approve-foreground: var(--success-foreground);
+  --reject: var(--destructive);
+  --reject-foreground: var(--destructive-foreground);
+  --refer: var(--warning);
+  --refer-foreground: var(--warning-foreground);
+
+  /* Shape */
+  --radius: 0.5rem;
+  --shadow-color: oklch(0.21 0.006 285.885 / 0.08);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.257 0.09 281.288);
+  --accent-foreground: oklch(0.87 0.065 274.039);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 18%);
+
+  --primary: oklch(0.673 0.182 276.935);
+  --primary-foreground: oklch(0.141 0.005 285.823);
+  --ring: oklch(0.673 0.182 276.935);
+
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.141 0.005 285.823);
+  --success: oklch(0.792 0.209 151.711);
+  --success-foreground: oklch(0.141 0.005 285.823);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.141 0.005 285.823);
+
+  --shadow-color: oklch(0 0 0 / 0.4);
+}

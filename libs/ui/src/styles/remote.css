@@ -1,0 +1,13 @@
+/*
+ * What a remote ships when the shell loads it: utility classes only. No CSS reset and no
+ * token values (the shell provides both), so a remote can't change the page's base styles.
+ * Each remote imports this from its own CSS file and adds `@source` for its own code.
+ */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import './theme.css';
+
+/* Classes used by libs/ui components, so a remote stays correct even if it ships with a
+   newer libs/ui than the shell. Identical rules from shell and remote are harmless. */
+@source '../';
