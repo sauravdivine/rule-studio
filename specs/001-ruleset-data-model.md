@@ -1,6 +1,6 @@
 # 001 · Ruleset data model
 
-**Status:** Approved
+**Status:** Done (23 Nov 2026). All acceptance criteria met; the last one by `libs/ruleset-validation` in spec 003.
 **Contract:** [`contracts/ruleset.schema.json`](../contracts/ruleset.schema.json)
 **Example:** [`contracts/examples/loan-approval.json`](../contracts/examples/loan-approval.json)
 

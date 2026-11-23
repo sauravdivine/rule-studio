@@ -33,20 +33,20 @@ API only. The screens that use it come in spec 005.
 
 All under `/api`, all need a signed-in user. **Permission** is checked by the guard from spec 002.
 
-| Method and path                                  | Permission        | What it does                                                                                                                                                       |
-| ------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /rulesets`                                  | `ruleset:read`    | List rulesets (summary only, no rules). Filters: `status=active\|archived` (default `active`), `q` (name contains). Sorted by last update, newest first. Paginated |
-| `POST /rulesets`                                 | `ruleset:edit`    | Create a ruleset from `name` and optional `description`. Starts with a starter draft (see below). `201` with `Location`                                            |
-| `GET /rulesets/{id}`                             | `ruleset:read`    | The ruleset: identity, the full draft, validation result, status fields, `ETag`                                                                                    |
-| `PATCH /rulesets/{id}`                           | `ruleset:edit`    | Change `name` and/or `description`. Needs `If-Match`                                                                                                               |
-| `PUT /rulesets/{id}/draft`                       | `ruleset:edit`    | Replace the draft's versioned content. Needs `If-Match`. Returns the updated ruleset                                                                               |
-| `GET /rulesets/{id}/versions`                    | `ruleset:read`    | Version history, newest first: number, comment, who, when, hash, whether live. No content                                                                          |
-| `GET /rulesets/{id}/versions/{version}`          | `ruleset:read`    | One version with its frozen content                                                                                                                                |
-| `POST /rulesets/{id}/versions`                   | `ruleset:publish` | Publish the draft. Body: `comment` (optional, ≤ 500), `makeLive` (boolean, default false). Needs `If-Match`. `201`                                                 |
-| `PUT /rulesets/{id}/live`                        | `ruleset:pin`     | Make a published version live. Body: `version`                                                                                                                     |
-| `POST /rulesets/{id}/versions/{version}/restore` | `ruleset:edit`    | Copy that version's content into the draft (rollback, step 1). Needs `If-Match`                                                                                    |
-| `POST /rulesets/{id}/archive`                    | `ruleset:archive` | Archive. Needs `If-Match`                                                                                                                                          |
-| `POST /rulesets/{id}/unarchive`                  | `ruleset:archive` | Unarchive. Needs `If-Match`                                                                                                                                        |
+| Method and path                                  | Permission        | What it does                                                                                                                                                           |
+| ------------------------------------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /rulesets`                                  | `ruleset:read`    | List rulesets (summary only, no rules). Filters: `status=active\|archived` (default `active`), `q` (name contains). Sorted by last update, newest first. Paginated     |
+| `POST /rulesets`                                 | `ruleset:edit`    | Create a ruleset from `name` and optional `description`. Starts with a starter draft (see below). `201` with `Location`                                                |
+| `GET /rulesets/{id}`                             | `ruleset:read`    | The ruleset: identity, the full draft, validation result, status fields, `ETag`                                                                                        |
+| `PATCH /rulesets/{id}`                           | `ruleset:edit`    | Change `name` and/or `description`. Needs `If-Match`                                                                                                                   |
+| `PUT /rulesets/{id}/draft`                       | `ruleset:edit`    | Replace the draft's versioned content. Needs `If-Match`. Returns the updated ruleset                                                                                   |
+| `GET /rulesets/{id}/versions`                    | `ruleset:read`    | Version history, newest first: number, comment, who, when, hash, whether live. No content                                                                              |
+| `GET /rulesets/{id}/versions/{version}`          | `ruleset:read`    | One version with its frozen content                                                                                                                                    |
+| `POST /rulesets/{id}/versions`                   | `ruleset:publish` | Publish the draft. Body: `comment` (optional, ≤ 500), `makeLive` (boolean, default false; `true` also needs `ruleset:pin`, added in spec 005). Needs `If-Match`. `201` |
+| `PUT /rulesets/{id}/live`                        | `ruleset:pin`     | Make a published version live. Body: `version`                                                                                                                         |
+| `POST /rulesets/{id}/versions/{version}/restore` | `ruleset:edit`    | Copy that version's content into the draft (rollback, step 1). Needs `If-Match`                                                                                        |
+| `POST /rulesets/{id}/archive`                    | `ruleset:archive` | Archive. Needs `If-Match`                                                                                                                                              |
+| `POST /rulesets/{id}/unarchive`                  | `ruleset:archive` | Unarchive. Needs `If-Match`                                                                                                                                            |
 
 There is no delete: published versions are history, and archive replaces delete.
 
@@ -162,7 +162,7 @@ The seed adds the example ruleset from spec 001 (`loan-approval.json`) with two 
 - [x] A viewer can read everything and gets `403` on every change; an editor gets `403` on pin and archive.
 - [x] Two saves with the same `If-Match`: the first succeeds, the second gets `412`. A save without `If-Match` gets `428`.
 - [x] Saving a draft that breaks the JSON Schema gets `400`; saving one with cross-field problems succeeds and returns them.
-- [x] Publishing: an invalid draft gets `422`; an unchanged draft gets `409`; the first publish makes v1 live; later publishes move the live version only with `makeLive: true`.
+- [x] Publishing: an invalid draft gets `422`; an unchanged draft gets `409`; the first publish makes v1 live; later publishes move the live version only with `makeLive: true`, which needs `ruleset:pin` (`403` otherwise; added in spec 005).
 - [x] Published versions never change: restoring, saving and publishing again leave earlier versions' content and hash identical.
 - [x] Rollback: restoring v1 into the draft and publishing creates v3 with v1's hash.
 - [x] `hasUnpublishedChanges` is false right after publishing and after restoring the latest version; reordering JSON keys in a save doesn't count as a change.

@@ -14,5 +14,8 @@ export default defineConfig({
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.spec.{ts,tsx}'],
     reporters: ['default'],
+    // Screen tests drive real Radix widgets through many renders; under a full
+    // parallel run they need more than the 5 s default.
+    testTimeout: 20_000,
   },
 });

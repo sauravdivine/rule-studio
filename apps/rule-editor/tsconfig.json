@@ -17,10 +17,22 @@
   "include": ["src"],
   "references": [
     {
-      "path": "../../libs/host"
+      "path": "../../libs/permissions"
     },
     {
       "path": "../../libs/ui"
+    },
+    {
+      "path": "../../libs/shared-types"
+    },
+    {
+      "path": "../../libs/ruleset-validation"
+    },
+    {
+      "path": "../../libs/host"
+    },
+    {
+      "path": "../../libs/api-client"
     }
   ]
 }

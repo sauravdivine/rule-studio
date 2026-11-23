@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { federation } from '@module-federation/vite';
 import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
+import { mfShared } from '../../tools/mf-shared.mts';
 
 const PORT = 4200;
 
@@ -37,10 +38,7 @@ export default defineConfig(({ mode }) => ({
       name: 'shell',
       // No build-time `remotes:` block - the consumer registers them at
       // runtime in src/mf.ts at module load time.
-      shared: {
-        react: { singleton: true },
-        'react-dom': { singleton: true },
-      },
+      shared: mfShared,
     }),
     react(),
     nxReadySignal(),

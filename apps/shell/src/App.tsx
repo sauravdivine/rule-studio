@@ -59,10 +59,11 @@ export function App({ demoPassword = '' }: { demoPassword?: string }) {
         }
       >
         <Route index element={<Navigate to={SECTIONS[0].path} replace />} />
+        {/* "/*": each remote owns every path below its section (spec 005). */}
         {SECTIONS.map((section) => (
           <Route
             key={section.path}
-            path={section.path}
+            path={`${section.path}/*`}
             element={<SectionPage section={section} />}
           />
         ))}

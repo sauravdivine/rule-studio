@@ -1,6 +1,7 @@
 import {
   ApiError,
   createApiClient,
+  isApiError,
   type ApiClientOptions,
 } from './api-client.js';
 
@@ -209,5 +210,56 @@ describe('createApiClient', () => {
     }).get('/x');
     const [url] = fetch.mock.calls[0] as unknown as [string];
     expect(url).toBe('https://api.example.dev/x');
+  });
+
+  it('sends extra headers such as If-Match, and keeps them on the retry after a refresh', async () => {
+    const valid = { current: 'new' };
+    const fetch = fakeApi(valid);
+    const api = createApiClient({ ...setup().options, fetch });
+    await api.put(
+      '/api/rulesets/1/draft',
+      { a: 1 },
+      { headers: { 'If-Match': '"3"' } },
+    );
+
+    expect(fetch).toHaveBeenCalledTimes(2); // 401 with the old token, then the retry
+    for (const [, init] of fetch.mock.calls as unknown as Array<
+      [string, RequestInit]
+    >) {
+      expect(new Headers(init.headers).get('If-Match')).toBe('"3"');
+    }
+  });
+
+  it('never lets extra headers replace the ones it owns', async () => {
+    const fetch = vi.fn(async () => json(200, {}));
+    await createApiClient({ ...setup().options, fetch }).get('/x', {
+      headers: { Accept: 'text/html' },
+    });
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(new Headers(init.headers).get('Accept')).toBe('application/json');
+  });
+
+  it('passes the abort signal to fetch', async () => {
+    const fetch = vi.fn(async () => json(200, {}));
+    const controller = new AbortController();
+    await createApiClient({ ...setup().options, fetch }).get('/x', {
+      signal: controller.signal,
+    });
+    const [, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.signal).toBe(controller.signal);
+  });
+
+  it('recognises an ApiError from another copy of this library (isApiError)', () => {
+    // What a remote sees: an error built by the shell's copy of the class.
+    class OtherCopyApiError extends Error {
+      constructor(readonly status: number) {
+        super('x');
+        this.name = 'ApiError';
+      }
+    }
+    const fromShell = new OtherCopyApiError(412);
+    expect(fromShell instanceof ApiError).toBe(false);
+    expect(isApiError(fromShell)).toBe(true);
+    expect(isApiError(new Error('x'))).toBe(false);
   });
 });

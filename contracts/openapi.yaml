@@ -885,7 +885,10 @@ components:
         makeLive:
           type: boolean
           default: false
-          description: Also make the new version live. The first publish is always made live.
+          description: >-
+            Also make the new version live. Needs `ruleset:pin` (admin), like pinning;
+            without it the request gets 403. The first publish is always made live,
+            for anyone who may publish.
 
     PinRequest:
       type: object

@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   PreconditionFailedException,
@@ -15,6 +16,7 @@ import type {
   RulesetVersionSummary,
   UpdateRulesetRequest,
 } from '@rule-studio/shared-types';
+import { can } from '@rule-studio/permissions';
 import { validateRulesetContent } from '@rule-studio/ruleset-validation';
 import type { AuthUser } from '../auth/auth-user';
 import { Prisma } from '../generated/prisma/client';
@@ -177,6 +179,14 @@ export class RulesetsService {
     body: PublishRequest,
     user: AuthUser,
   ): Promise<{ version: RulesetVersion; revision: number }> {
+    // Making a version live is pinning, which only admins may do (spec 002). The
+    // endpoint needs ruleset:publish, so this one field needs its own check.
+    if (body.makeLive === true && !can(user.role, 'ruleset:pin')) {
+      throw new ForbiddenException({
+        detail:
+          'Only users who may pin the live version can publish with makeLive.',
+      });
+    }
     try {
       return await this.prisma.$transaction(async (tx) => {
         const row = await this.load(tx, id);

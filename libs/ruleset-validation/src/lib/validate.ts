@@ -16,11 +16,11 @@ import type {
 // Input must already be structurally valid (it passed the JSON Schema).
 // Pure TypeScript: no Node or browser APIs, so it runs anywhere.
 
-type Operator = Condition['operator'];
+export type Operator = Condition['operator'];
 type Group = ConditionGroup | ConditionGroupLevel2 | ConditionGroupLevel3;
 
 // Which operators each field type allows (spec 001, operator table).
-const OPERATORS: Record<FieldType, readonly Operator[]> = {
+export const OPERATORS: Record<FieldType, readonly Operator[]> = {
   NUMBER: [
     'EQ',
     'NEQ',
@@ -57,6 +57,11 @@ const OPERATORS: Record<FieldType, readonly Operator[]> = {
     'IS_NOT_EMPTY',
   ],
 };
+
+// The operators a field of this type may use, in the order the editor offers them.
+export function operatorsFor(type: FieldType): readonly Operator[] {
+  return OPERATORS[type];
+}
 
 const TYPE_NAME: Record<FieldType, string> = {
   NUMBER: 'a number',

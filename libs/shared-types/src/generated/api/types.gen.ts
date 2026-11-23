@@ -143,7 +143,7 @@ export type UpdateRulesetRequest = {
 export type PublishRequest = {
   comment?: string;
   /**
-   * Also make the new version live. The first publish is always made live.
+   * Also make the new version live. Needs `ruleset:pin` (admin), like pinning; without it the request gets 403. The first publish is always made live, for anyone who may publish.
    */
   makeLive?: boolean;
 };

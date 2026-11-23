@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import './styles.css';
 import { App } from './App';
 import { AuthProvider } from './auth/auth-context';
@@ -14,12 +14,23 @@ if (!container) throw new Error('#root element not found');
 const session = createAuthSession();
 void session.start();
 
-createRoot(container).render(
-  <StrictMode>
-    <BrowserRouter>
+// A data router (createBrowserRouter) rather than <BrowserRouter>: the same
+// routes, declared in App, but it also enables useBlocker, which the rule
+// editor uses to warn about unsaved changes (spec 005). One catch-all route
+// renders App, whose <Routes> do the matching as before.
+const router = createBrowserRouter([
+  {
+    path: '*',
+    element: (
       <AuthProvider session={session}>
         <App demoPassword={__DEMO_PASSWORD__} />
       </AuthProvider>
-    </BrowserRouter>
+    ),
+  },
+]);
+
+createRoot(container).render(
+  <StrictMode>
+    <RouterProvider router={router} />
   </StrictMode>,
 );

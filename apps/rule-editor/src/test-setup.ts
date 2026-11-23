@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
+
+// findBy… waits up to 3 s (default 1 s), for slow CI machines and parallel runs.
+configure({ asyncUtilTimeout: 3000 });
 
 // jsdom is not a browser. Fill in the few APIs Radix (menus) and the theme code use.
 window.matchMedia ??= (query: string) =>

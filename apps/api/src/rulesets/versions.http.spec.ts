@@ -165,10 +165,11 @@ describe('Ruleset versions API (HTTP)', () => {
       expect((await r.versions()).body).toEqual([]);
     });
 
-    it('moves the live version only when asked', async () => {
+    it('moves the live version only when an admin asks', async () => {
       const r = await newRuleset();
       await r.save('one');
-      await r.publish();
+      await r.publish(); // an editor's first publish still goes live
+      expect((await r.get()).body.liveVersion).toBe(1);
       await r.save('two');
       expect((await r.publish()).body).toMatchObject({
         version: 2,
@@ -179,11 +180,23 @@ describe('Ruleset versions API (HTTP)', () => {
         liveVersion: 1,
       });
       await r.save('three');
-      expect((await r.publish({ makeLive: true })).body).toMatchObject({
-        version: 3,
-        isLive: true,
-      });
+      const admin = await api()
+        .post(`/api/rulesets/${r.id}/versions`)
+        .set(auth('ADMIN'))
+        .set('If-Match', r.etag)
+        .send({ makeLive: true });
+      expect(admin.body).toMatchObject({ version: 3, isLive: true });
       expect((await r.get()).body.liveVersion).toBe(3);
+    });
+
+    it('refuses makeLive from an editor (403), as pinning is admin-only', async () => {
+      const r = await newRuleset();
+      await r.save('one');
+      await r.publish();
+      await r.save('two');
+      const res = await r.publish({ makeLive: true });
+      expect(res.status).toBe(403);
+      expect((await r.versions()).body).toHaveLength(1);
     });
 
     it('needs If-Match (428) and refuses a stale one (412)', async () => {

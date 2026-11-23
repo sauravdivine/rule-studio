@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { federation } from '@module-federation/vite';
 import { nxReadySignal } from '@nx/vite/plugins/nx-ready-signal.plugin';
+import { mfShared } from '../../tools/mf-shared.mts';
 
 // Port deliberately avoids 5000 (macOS AirTunes binds it on 0.0.0.0, leading
 // to silent EADDRINUSE on 127.0.0.1). Override `--port` only if 5000+ is free.
@@ -30,10 +31,7 @@ export default defineConfig({
       exposes: {
         './App': './src/App.tsx',
       },
-      shared: {
-        react: { singleton: true },
-        'react-dom': { singleton: true },
-      },
+      shared: mfShared,
     }),
     react(),
     nxReadySignal(),

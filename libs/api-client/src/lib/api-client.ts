@@ -15,6 +15,18 @@ export class ApiError extends Error {
   }
 }
 
+// Use this instead of `instanceof ApiError` in remotes. Each remote bundles its
+// own copy of this library, so an error thrown by the shell's client is an
+// instance of the shell's ApiError class, not the remote's: instanceof would
+// say false (the same identity rule as React context, spec 004).
+export function isApiError(error: unknown): error is ApiError {
+  return (
+    error instanceof Error &&
+    error.name === 'ApiError' &&
+    typeof (error as { status?: unknown }).status === 'number'
+  );
+}
+
 export interface ApiClientOptions {
   // The current access token, or null when signed out. Read before every request.
   getAccessToken: () => string | null | undefined;
@@ -31,13 +43,28 @@ export interface ApiClientOptions {
 
 export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
+// Per-request extras (spec 005).
+export interface RequestOptions {
+  // Extra headers, such as If-Match for optimistic locking. Authorization,
+  // Accept and Content-Type are always set by the client.
+  headers?: Record<string, string>;
+  // Cancels the request (AbortController). A cancelled request rejects with
+  // an AbortError, which callers usually ignore.
+  signal?: AbortSignal;
+}
+
 export interface ApiClient {
-  request<T>(method: Method, path: string, body?: unknown): Promise<T>;
-  get<T>(path: string): Promise<T>;
-  post<T>(path: string, body?: unknown): Promise<T>;
-  put<T>(path: string, body?: unknown): Promise<T>;
-  patch<T>(path: string, body?: unknown): Promise<T>;
-  delete<T = void>(path: string): Promise<T>;
+  request<T>(
+    method: Method,
+    path: string,
+    body?: unknown,
+    options?: RequestOptions,
+  ): Promise<T>;
+  get<T>(path: string, options?: RequestOptions): Promise<T>;
+  post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>;
+  delete<T = void>(path: string, options?: RequestOptions): Promise<T>;
 }
 
 // A 401 from these means "wrong credentials" or "session over", not "token expired",
@@ -81,8 +108,12 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     path: string,
     body: unknown,
     token: string | null | undefined,
+    extra: RequestOptions,
   ) {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = {
+      ...extra.headers,
+      Accept: 'application/json',
+    };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -94,6 +125,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
       credentials: 'same-origin',
+      signal: extra.signal,
     });
   }
 
@@ -101,8 +133,15 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
     method: Method,
     path: string,
     body?: unknown,
+    extra: RequestOptions = {},
   ): Promise<T> {
-    let response = await send(method, path, body, options.getAccessToken());
+    let response = await send(
+      method,
+      path,
+      body,
+      options.getAccessToken(),
+      extra,
+    );
 
     if (response.status === 401 && !NO_REFRESH_PATHS.includes(path)) {
       // Probably an expired access token: refresh once, then retry once.
@@ -111,7 +150,7 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
         signOut();
         throw await toError(response);
       }
-      response = await send(method, path, body, token);
+      response = await send(method, path, body, token, extra);
       if (response.status === 401) {
         signOut(); // a brand-new token was refused: the session is gone
       }
@@ -126,11 +165,11 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
 
   return {
     request,
-    get: (path) => request('GET', path),
-    post: (path, body) => request('POST', path, body),
-    put: (path, body) => request('PUT', path, body),
-    patch: (path, body) => request('PATCH', path, body),
-    delete: (path) => request('DELETE', path),
+    get: (path, extra) => request('GET', path, undefined, extra),
+    post: (path, body, extra) => request('POST', path, body, extra),
+    put: (path, body, extra) => request('PUT', path, body, extra),
+    patch: (path, body, extra) => request('PATCH', path, body, extra),
+    delete: (path, extra) => request('DELETE', path, undefined, extra),
   };
 }
 

@@ -36,11 +36,11 @@ Specs are numbered in build order:
 
 | #   | Spec                                        | Status      |
 | --- | ------------------------------------------- | ----------- |
-| 001 | Ruleset data model                          | Approved    |
+| 001 | Ruleset data model                          | Done        |
 | 002 | Auth                                        | Done        |
 | 003 | Rulesets API                                | Built       |
 | 004 | UI foundation: design tokens and components | Built       |
-| 005 | Rule editor                                 | Not started |
+| 005 | Rule editor                                 | Built       |
 | 006 | Rule engine                                 | Not started |
 | 007 | Simulator                                   | Not started |
 | 008 | Dashboard                                   | Not started |
@@ -64,6 +64,7 @@ libs/
   host/           HostProps type the shell passes to remotes: { user, can, api } (spec 002)
   ruleset-validation/  cross-field checks on a ruleset (spec 001's rules), shared by the API and the rule editor (spec 003)
 contracts/        JSON Schemas and the OpenAPI spec, the source of truth
+tools/            build helpers shared by apps (mf-shared.mts: Module Federation shared libraries)
   examples/       example payloads, used as test fixtures
 specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md) and build summary (NNN-name.summary.md)
 docs/             project docs, including commands.md (every command, what it does)
@@ -74,8 +75,8 @@ docs/             project docs, including commands.md (every command, what it do
 - React 19, TypeScript strict, Vite, Module Federation via `@module-federation/vite`.
 - Remotes are registered at runtime in `apps/shell/src/mf.ts`. Each remote is wrapped in an error boundary so one failing remote never takes down the shell.
 - Remotes never import from each other. Shared code goes in `libs/`.
-- Server state: TanStack Query. Small client state: Zustand. No other state libraries.
-- Forms: React Hook Form with Zod. Validation rules must match the JSON Schema in `contracts/`.
+- Server state: hand-written hooks for now (`useResource` in the rule editor: `useEffect`, `AbortController`), on purpose (spec 005, decision 2); a follow-up spec moves them to TanStack Query. Small client state: Zustand. No other state libraries.
+- Forms: React Hook Form with Zod for flat forms (login). The ruleset draft editor is one nested document in a reducer with Immer (spec 005). Validation rules must match the JSON Schema in `contracts/`: the editor runs the contract's `zRulesetContent` (structure) and `libs/ruleset-validation` (cross-field) in the browser.
 - Every data view handles loading, empty, error and success states.
 - Accessible by default: semantic HTML, labelled inputs, keyboard support, visible focus.
 - UI comes from `@rule-studio/ui` (spec 004). Never hand-roll a button, input, card or alert in an app; if a component is missing, add it to `libs/ui` with a story and tests.
@@ -83,6 +84,8 @@ docs/             project docs, including commands.md (every command, what it do
 - CSS loading: the shell imports `@rule-studio/ui/styles/global.css` (reset, tokens, themes) once. Each remote's exposed `App` imports its own `src/styles.css`, which uses `remote.css` (utilities only); a remote's standalone `bootstrap.tsx` also imports `global.css`.
 - Theme: `<html data-theme="light|dark">`, set by `useTheme()` / `ThemeToggle` and by the inline script in `apps/shell/index.html`. Never put the theme in React context.
 - Auth lives only in the shell (`apps/shell/src/auth`). A remote's exposed `App` takes `HostProps` from `@rule-studio/host` and uses `host.can()` to hide actions and `host.api` to call the API. Remotes never read tokens, cookies or the shell's code. Test remotes with `createTestHost(role)` from `@rule-studio/host/testing`.
+- Routing inside a remote: the shell mounts each remote at `/<section>/*` and the remote declares its own `<Routes>` under it. `react-router` is a shared Module Federation singleton with `strictVersion` (configured once in `tools/mf-shared.mts`); the shell uses a data router (`createBrowserRouter`) so remotes can use `useBlocker`.
+- Never use `instanceof` on errors or classes that cross from the shell into a remote (each bundles its own copy of a library): use `isApiError()` and similar structural checks. Each remote that calls `toast()` mounts its own `<Toaster />` for the same reason.
 - Apps keep test config in `vitest.config.mts`, apart from `vite.config.mts`, so the federation plugin never runs in tests.
 - Every new component in `libs/ui` gets a `*.stories.tsx` and a `*.spec.tsx` that includes an axe check (`axeViolations`).
 - Tests: Vitest and React Testing Library next to the code as `*.spec.tsx`.

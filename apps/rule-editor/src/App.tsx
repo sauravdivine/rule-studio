@@ -1,67 +1,25 @@
-import { FilePlus2, Pencil, Upload } from 'lucide-react';
+import { Route, Routes } from 'react-router';
 import type { HostProps } from '@rule-studio/host';
-import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  EmptyState,
-} from '@rule-studio/ui';
+import { Toaster } from '@rule-studio/ui';
+import { RulesetListPage } from './pages/ruleset-list-page';
+import { RulesetPage } from './pages/ruleset-page';
 import './styles.css';
 
-// Placeholder until spec 005 (rule editor). Shows the role-aware pattern every
-// remote follows: ask host.can() and leave out what the user may not do, so
-// they never see a button that would end in a 403.
+// The rule editor's own routes, relative to wherever the shell mounts it
+// (`/rulesets/*`). They run inside the shell's router, shared as a singleton
+// (spec 005, decision 1).
+//
+// The Toaster is mounted here, not in the shell: each remote bundles its own
+// copy of the UI library, and toast() only reaches a Toaster from the same copy.
 export function App({ host }: HostProps) {
-  const canEdit = host.can('ruleset:edit');
-  const canPublish = host.can('ruleset:publish');
-  const readOnly = !canEdit && !canPublish;
-
   return (
-    <Card data-testid="rule-editor">
-      <CardHeader>
-        <div className="flex items-center gap-2">
-          <CardTitle>Rulesets</CardTitle>
-          <Badge variant="outline">Coming in spec 005</Badge>
-          {readOnly && <Badge variant="neutral">Read only</Badge>}
-        </div>
-        <CardDescription>
-          Write and publish rules that approve, reject or refer an application.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <EmptyState
-          icon={FilePlus2}
-          title="No rulesets yet"
-          description={
-            readOnly
-              ? `Signed in as ${host.user.displayName}. You can browse rulesets once they exist.`
-              : 'Rulesets you create will appear here.'
-          }
-          action={
-            canEdit ? <Button disabled>Create ruleset</Button> : undefined
-          }
-        />
-      </CardContent>
-      {!readOnly && (
-        <CardFooter>
-          {canEdit && (
-            <Button variant="outline" size="sm">
-              <Pencil aria-hidden="true" /> Edit
-            </Button>
-          )}
-          {canPublish && (
-            <Button size="sm">
-              <Upload aria-hidden="true" /> Publish
-            </Button>
-          )}
-        </CardFooter>
-      )}
-    </Card>
+    <>
+      <Routes>
+        <Route index element={<RulesetListPage host={host} />} />
+        <Route path=":id" element={<RulesetPage host={host} />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 

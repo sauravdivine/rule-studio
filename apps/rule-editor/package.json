@@ -9,11 +9,15 @@
     "preview": "vite preview --port 5101 --strictPort"
   },
   "dependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "@rule-studio/api-client": "*",
+    "@rule-studio/host": "*",
+    "@rule-studio/ruleset-validation": "*",
+    "@rule-studio/shared-types": "*",
     "@rule-studio/ui": "*",
+    "immer": "11.2.9",
     "lucide-react": "^1.77.0",
-    "@rule-studio/host": "*"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@module-federation/vite": "^1.15.5",
