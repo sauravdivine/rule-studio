@@ -1,6 +1,6 @@
 # 002 · Auth
 
-**Status:** Approved
+**Status:** Done (23 Nov 2026). Built and checked end to end on the owner's Mac. See [002-auth.summary.md](002-auth.summary.md).
 **Contract:** `contracts/openapi.yaml` (created by this spec; first API contract)
 **Depends on:** 001 (approved)
 

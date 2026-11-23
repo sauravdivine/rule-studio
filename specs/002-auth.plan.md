@@ -1,7 +1,7 @@
 # 002 · Auth: implementation plan
 
 **Spec:** [002-auth.md](002-auth.md) (approved)
-**Status:** Approved (19 Nov 2026). Tasks 0–9 built (22 Nov 2026). Task 10, the end-to-end check, runs on the owner's Mac.
+**Status:** Approved (19 Nov 2026). Tasks 0–9 built (22 Nov 2026). Task 10, the end-to-end check, passed on the owner's Mac (23 Nov 2026).
 
 Each task is one reviewable step. After each: checks pass, the owner reviews, then commits. No task starts before the previous one is reviewed.
 

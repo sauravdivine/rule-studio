@@ -34,18 +34,18 @@ The owner is building this project to learn and to explain it in interviews.
 
 Specs are numbered in build order:
 
-| #   | Spec                                        | Status           |
-| --- | ------------------------------------------- | ---------------- |
-| 001 | Ruleset data model                          | Approved         |
-| 002 | Auth                                        | Built; Mac check |
-| 003 | Rulesets API                                | Built            |
-| 004 | UI foundation: design tokens and components | Built            |
-| 005 | Rule editor                                 | Not started      |
-| 006 | Rule engine                                 | Not started      |
-| 007 | Simulator                                   | Not started      |
-| 008 | Dashboard                                   | Not started      |
-| 009 | AI rule writer                              | Not started      |
-| 010 | AI explain and review                       | Not started      |
+| #   | Spec                                        | Status      |
+| --- | ------------------------------------------- | ----------- |
+| 001 | Ruleset data model                          | Approved    |
+| 002 | Auth                                        | Done        |
+| 003 | Rulesets API                                | Built       |
+| 004 | UI foundation: design tokens and components | Built       |
+| 005 | Rule editor                                 | Not started |
+| 006 | Rule engine                                 | Not started |
+| 007 | Simulator                                   | Not started |
+| 008 | Dashboard                                   | Not started |
+| 009 | AI rule writer                              | Not started |
+| 010 | AI explain and review                       | Not started |
 
 ## Repository layout
 

@@ -1,7 +1,7 @@
 # 002 · Auth: build summary and learnings
 
 **Spec:** [002-auth.md](002-auth.md) · **Plan:** [002-auth.plan.md](002-auth.plan.md)
-**Status:** Tasks 0–7 built 19–22 Nov 2026; tasks 8–9 built 22 Nov 2026 (section at the end). All 13 acceptance criteria met. Task 10 (the end-to-end check on the owner's Mac) remains.
+**Status:** Tasks 0–7 built 19–22 Nov 2026; tasks 8–9 built 22 Nov 2026 (section at the end). All 13 acceptance criteria met. Task 10, the end-to-end check on the owner's Mac, passed 23 Nov 2026: viewer sign-in, switching sections, sign-out and the redirect back to login.
 
 What was built, why, which libraries came in, and what is worth being able to explain in an interview.
 
