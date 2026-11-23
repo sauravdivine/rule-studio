@@ -179,6 +179,73 @@ export type InvalidDraftProblem = ProblemDetails & {
   problems: Array<ValidationProblem>;
 };
 
+export type EvaluateRequest = {
+  /**
+   * What to evaluate. Default "live".
+   */
+  target?: 'live' | 'draft' | number;
+  /**
+   * One record, keyed by input field key. Missing means absent, null, or "" for a text field. Keys that aren't input fields are ignored; a value of the wrong type is a 400.
+   */
+  input: {
+    [key: string]: string | number | boolean | null;
+  };
+  /**
+   * Include the trace (every rule and condition, with actual values).
+   */
+  explain?: boolean;
+};
+
+/**
+ * Spec 001's result shape, plus which version ran and, with explain, the trace.
+ */
+export type EvaluationResult = {
+  output: Action;
+  /**
+   * Ids of every rule that fired, in evaluation order.
+   */
+  firedRules: Array<string>;
+  /**
+   * The version number that ran, or "draft".
+   */
+  version: number | 'draft';
+  trace?: Array<RuleTrace>;
+};
+
+export type RuleTrace = {
+  ruleId: string;
+  name: string;
+  priority: number;
+  /**
+   * notReached means a FIRST ruleset stopped at an earlier rule.
+   */
+  status: 'fired' | 'notFired' | 'disabled' | 'notReached';
+  when?: GroupTrace;
+};
+
+export type GroupTrace = {
+  type: 'group';
+  operator: 'AND' | 'OR';
+  result: boolean;
+  children: Array<ConditionTrace | GroupTrace>;
+};
+
+export type ConditionTrace = {
+  type: 'condition';
+  field: string;
+  operator: string;
+  /**
+   * The condition's value (absent for IS_EMPTY / IS_NOT_EMPTY).
+   */
+  expected?: unknown;
+  /**
+   * The value from the input (absent when missing).
+   */
+  actual?: unknown;
+  missing: boolean;
+  result: boolean;
+};
+
 export type Action = {
   decision: Decision;
   reason?: string;
@@ -845,6 +912,55 @@ export type RestoreVersionResponses = {
 
 export type RestoreVersionResponse =
   RestoreVersionResponses[keyof RestoreVersionResponses];
+
+export type EvaluateRulesetData = {
+  body: EvaluateRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/evaluate';
+};
+
+export type EvaluateRulesetErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * The draft has cross-field problems, so it can't be published.
+   */
+  422: InvalidDraftProblem;
+};
+
+export type EvaluateRulesetError =
+  EvaluateRulesetErrors[keyof EvaluateRulesetErrors];
+
+export type EvaluateRulesetResponses = {
+  /**
+   * The decision, and with explain, why.
+   */
+  200: EvaluationResult;
+};
+
+export type EvaluateRulesetResponse =
+  EvaluateRulesetResponses[keyof EvaluateRulesetResponses];
 
 export type PinLiveVersionData = {
   body: PinRequest;

@@ -10,6 +10,7 @@
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@rule-studio/permissions": "*",
+    "@rule-studio/rule-engine": "*",
     "@rule-studio/ruleset-validation": "*",
     "@rule-studio/shared-types": "*",
     "argon2": "^0.45.2",

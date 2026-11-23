@@ -42,6 +42,9 @@
       "path": "../../libs/ruleset-validation/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/rule-engine/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/permissions/tsconfig.lib.json"
     }
   ]

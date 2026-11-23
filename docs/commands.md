@@ -149,6 +149,18 @@ TOKEN=$(curl -s localhost:3000/api/auth/login -H 'Content-Type: application/json
 
 **The `ETag` → `If-Match` round trip:** read the ruleset, keep its `ETag`, send it as `If-Match` on your change, and use the `ETag` in the answer for the next change. If someone changed the ruleset in between, you get `412` with `currentRevision`: reload, reapply, send again.
 
+## Rule engine (spec 006)
+
+With the API running and `$TOKEN` from above (any role may evaluate). The seeded ruleset's id is in the list response.
+
+| Command                                                                                                                                                                                                            | What it does                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `curl -s -X POST localhost:3000/api/rulesets/<id>/evaluate -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"input":{"creditScore":780,"employmentType":"SALARIED","debtToIncome":20}}'` | Runs the live version on one applicant: `{"output":{"decision":"APPROVE",…},"firedRules":[…],"version":1}`                       |
+| Same, with `-d '{"target":"draft","input":{…},"explain":true}'`                                                                                                                                                    | Runs the draft instead (`"target":2` runs version 2) and adds the `trace`: every rule's status and each condition's actual value |
+| Same, with `-d '{"input":{"creditScore":"780"}}'`                                                                                                                                                                  | `400` listing every input problem, e.g. `/input/creditScore`: needs a number                                                     |
+| `npx nx test rule-engine`                                                                                                                                                                                          | The engine's tests: every operator, spec 001's scenarios, and 8 property-based tests (1,000 random rulesets each)                |
+| `npx nx test rule-engine -- -t "PRIORITY"`                                                                                                                                                                         | Only the tests whose name contains "PRIORITY"                                                                                    |
+
 ## Rule editor (spec 005)
 
 Needs the API, the shell and the rule editor running: `npx nx serve api`, then `npx nx run-many -t serve -p shell rule-editor simulator dashboard`. Open http://localhost:4200/rulesets.

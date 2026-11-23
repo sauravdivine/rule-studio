@@ -389,6 +389,40 @@ paths:
         '428':
           $ref: '#/components/responses/PreconditionRequired'
 
+  /api/rulesets/{id}/evaluate:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    post:
+      tags: [rulesets]
+      operationId: evaluateRuleset
+      summary: Evaluate one input record against the live version, the draft, or a published version (spec 006)
+      x-permission: simulation:run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateRequest'
+      responses:
+        '200':
+          description: The decision, and with explain, why.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/InvalidDraft'
+
   /api/rulesets/{id}/live:
     parameters:
       - $ref: '#/components/parameters/RulesetId'
@@ -953,3 +987,114 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ValidationProblem'
+
+    # --- Rule engine (spec 006) ---
+
+    EvaluateRequest:
+      type: object
+      additionalProperties: false
+      required: [input]
+      properties:
+        target:
+          description: What to evaluate. Default "live".
+          oneOf:
+            - type: string
+              enum: [live, draft]
+            - type: integer
+              minimum: 1
+        input:
+          description: >-
+            One record, keyed by input field key. Missing means absent, null, or ""
+            for a text field. Keys that aren't input fields are ignored; a value of
+            the wrong type is a 400.
+          type: object
+          additionalProperties:
+            type: [string, number, boolean, 'null']
+        explain:
+          type: boolean
+          default: false
+          description: Include the trace (every rule and condition, with actual values).
+
+    EvaluationResult:
+      description: Spec 001's result shape, plus which version ran and, with explain, the trace.
+      type: object
+      additionalProperties: false
+      required: [output, firedRules, version]
+      properties:
+        output:
+          $ref: './ruleset.schema.json#/$defs/Action'
+        firedRules:
+          type: array
+          description: Ids of every rule that fired, in evaluation order.
+          items:
+            type: string
+        version:
+          description: The version number that ran, or "draft".
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: string
+              enum: [draft]
+        trace:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleTrace'
+
+    RuleTrace:
+      type: object
+      additionalProperties: false
+      required: [ruleId, name, priority, status]
+      properties:
+        ruleId:
+          type: string
+        name:
+          type: string
+        priority:
+          type: integer
+        status:
+          type: string
+          enum: [fired, notFired, disabled, notReached]
+          description: notReached means a FIRST ruleset stopped at an earlier rule.
+        when:
+          $ref: '#/components/schemas/GroupTrace'
+
+    GroupTrace:
+      type: object
+      additionalProperties: false
+      required: [type, operator, result, children]
+      properties:
+        type:
+          type: string
+          enum: [group]
+        operator:
+          type: string
+          enum: [AND, OR]
+        result:
+          type: boolean
+        children:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/ConditionTrace'
+              - $ref: '#/components/schemas/GroupTrace'
+
+    ConditionTrace:
+      type: object
+      additionalProperties: false
+      required: [type, field, operator, missing, result]
+      properties:
+        type:
+          type: string
+          enum: [condition]
+        field:
+          type: string
+        operator:
+          type: string
+        expected:
+          description: The condition's value (absent for IS_EMPTY / IS_NOT_EMPTY).
+        actual:
+          description: The value from the input (absent when missing).
+        missing:
+          type: boolean
+        result:
+          type: boolean

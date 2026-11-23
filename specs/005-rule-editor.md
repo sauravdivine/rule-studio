@@ -78,7 +78,7 @@ Two tabs:
    - **Approved:** share `react-router` between shell and remotes as a Module Federation **singleton with `strictVersion`**, so the remote's routes run inside the shell's router. The routes are nested under `/rulesets/*`.
    - Unlike the theme context, a mismatch here fails **loudly**: Module Federation refuses to load the remote if the versions don't match. That is the difference from the silent duplication we avoided in specs 002 and 004.
    - _Alternative:_ the host passes a navigation capability (`host.basePath`, `host.navigate`, the current sub-path) and the remote parses its own paths. This needs no shared library, but it's hand-rolled routing.
-2. **Server data: fetched by hand first, TanStack Query later.** **Approved (owner's change).** This spec loads and saves data with small hand-written hooks (`useEffect`, `useState`, `AbortController`), kept behind one module per screen so they can be swapped later. A follow-up moves them to TanStack Query, so the owner sees both approaches on the same screens: what hand-written fetching has to handle (race conditions, stale responses, loading and error states, refetching after a save) and what the library then removes. The build summary records each of those pain points as it's met, to compare against.
+2. **Server data: fetched by hand first, TanStack Query later.** **Approved (owner's change).** This spec loads and saves data with small hand-written hooks (`useEffect`, `useState`, `AbortController`), kept behind one module per screen so they can be swapped later. Moving them to TanStack Query is deferred to the end of the project, and only if needed (owner, 23 Nov 2026). If it happens, the owner sees both approaches on the same screens: what hand-written fetching has to handle (race conditions, stale responses, loading and error states, refetching after a save) and what the library then removes. The build summary records each of those pain points as it's met, to compare against.
 3. **Editor state: one draft document in a reducer, updated with Immer.** **Approved.**
    - The draft is one nested document (groups inside groups). A reducer with actions like `addCondition(path)` and `setOperator(path, op)` updates it, and Immer lets those updates be written as simple mutations while staying immutable.
    - Unsaved changes come from comparing with the last saved copy.
@@ -97,7 +97,7 @@ Two tabs:
 
 ## Out of scope
 
-- TanStack Query (a follow-up, after this spec; see decision 2).
+- TanStack Query (deferred to the end of the project, if needed; see decision 2).
 - AI rule writing and explanations (specs 009 and 010).
 - Running a ruleset (the simulator, spec 007).
 - Comparing two versions side by side.

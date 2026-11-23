@@ -138,11 +138,57 @@ export const zInvalidDraftProblem = zProblemDetails.and(
   }),
 );
 
+export const zEvaluateRequest = z.object({
+  target: z
+    .union([z.literal('live'), z.literal('draft'), z.int().gte(1)])
+    .optional(),
+  input: z.record(
+    z.string(),
+    z.union([z.string(), z.number(), z.boolean()]).nullable(),
+  ),
+  explain: z.boolean().optional().default(false),
+});
+
+export const zConditionTrace = z.object({
+  type: z.enum(['condition']),
+  field: z.string(),
+  operator: z.string(),
+  expected: z.unknown().optional(),
+  actual: z.unknown().optional(),
+  missing: z.boolean(),
+  result: z.boolean(),
+});
+
+export const zGroupTrace = z.object({
+  type: z.enum(['group']),
+  operator: z.enum(['AND', 'OR']),
+  result: z.boolean(),
+  children: z.array(z.union([zConditionTrace, z.lazy((): any => zGroupTrace)])),
+});
+
+export const zRuleTrace = z.object({
+  ruleId: z.string(),
+  name: z.string(),
+  priority: z.int(),
+  status: z.enum(['fired', 'notFired', 'disabled', 'notReached']),
+  when: zGroupTrace.optional(),
+});
+
 export const zDecision = z.enum(['APPROVE', 'REJECT', 'REFER']);
 
 export const zAction = z.object({
   decision: zDecision,
   reason: z.string().max(200).optional(),
+});
+
+/**
+ * Spec 001's result shape, plus which version ran and, with explain, the trace.
+ */
+export const zEvaluationResult = z.object({
+  output: zAction,
+  firedRules: z.array(z.string()),
+  version: z.union([z.int().gte(1), z.enum(['draft'])]),
+  trace: z.array(zRuleTrace).optional(),
 });
 
 export const zEmptinessCondition = z.object({
@@ -436,6 +482,17 @@ export const zRestoreVersionPath = z.object({
  * The ruleset after the change.
  */
 export const zRestoreVersionResponse = zRuleset;
+
+export const zEvaluateRulesetBody = zEvaluateRequest;
+
+export const zEvaluateRulesetPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The decision, and with explain, why.
+ */
+export const zEvaluateRulesetResponse = zEvaluationResult;
 
 export const zPinLiveVersionBody = zPinRequest;
 

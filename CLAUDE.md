@@ -41,7 +41,7 @@ Specs are numbered in build order:
 | 003 | Rulesets API                                | Built       |
 | 004 | UI foundation: design tokens and components | Built       |
 | 005 | Rule editor                                 | Built       |
-| 006 | Rule engine                                 | Not started |
+| 006 | Rule engine                                 | Built       |
 | 007 | Simulator                                   | Not started |
 | 008 | Dashboard                                   | Not started |
 | 009 | AI rule writer                              | Not started |
@@ -75,7 +75,7 @@ docs/             project docs, including commands.md (every command, what it do
 - React 19, TypeScript strict, Vite, Module Federation via `@module-federation/vite`.
 - Remotes are registered at runtime in `apps/shell/src/mf.ts`. Each remote is wrapped in an error boundary so one failing remote never takes down the shell.
 - Remotes never import from each other. Shared code goes in `libs/`.
-- Server state: hand-written hooks for now (`useResource` in the rule editor: `useEffect`, `AbortController`), on purpose (spec 005, decision 2); a follow-up spec moves them to TanStack Query. Small client state: Zustand. No other state libraries.
+- Server state: hand-written hooks for now (`useResource` in the rule editor: `useEffect`, `AbortController`), on purpose (spec 005, decision 2). Moving them to TanStack Query is deferred to the end of the project, if needed (owner's decision, 23 Nov 2026). Small client state: Zustand. No other state libraries.
 - Forms: React Hook Form with Zod for flat forms (login). The ruleset draft editor is one nested document in a reducer with Immer (spec 005). Validation rules must match the JSON Schema in `contracts/`: the editor runs the contract's `zRulesetContent` (structure) and `libs/ruleset-validation` (cross-field) in the browser.
 - Every data view handles loading, empty, error and success states.
 - Accessible by default: semantic HTML, labelled inputs, keyboard support, visible focus.
@@ -97,6 +97,7 @@ docs/             project docs, including commands.md (every command, what it do
 - One Nest module per feature: `auth`, `users`, `rulesets`, `simulation`, `ai`, plus `common` for config, errors and validation.
 - Controllers match `contracts/openapi.yaml` exactly. Request validation uses the Zod schemas generated from the contract; no hand-written DTO classes.
 - Every error is returned as RFC 9457 problem details by one global exception filter.
+- Decision logic lives only in `libs/rule-engine` (spec 006): pure TypeScript, no I/O, clock or randomness. The API picks the content and checks the input; it never decides anything itself.
 - Authorise with permissions from `libs/permissions` (`@RequirePermission(...)`), never by checking role names.
 - Configuration comes from environment variables, validated with Zod at startup. Secrets and keys are never in code.
 - The LLM is only ever called from the API. Treat all user text and model output as untrusted data: validate model output against the ruleset JSON Schema before using or returning it.

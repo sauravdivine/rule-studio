@@ -23,6 +23,9 @@
     },
     {
       "path": "./libs/ruleset-validation"
+    },
+    {
+      "path": "./libs/rule-engine"
     }
   ],
   "compilerOptions": {}

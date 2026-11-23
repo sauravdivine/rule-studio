@@ -14,7 +14,7 @@ Built in one go once approved, then summarised in `005-rule-editor.summary.md`. 
 | `radix-ui` 1.8 (already in `libs/ui`)       | Dialog, Select, Tabs, Checkbox, Switch primitives                  | no change                                          |
 | `react-router` 8.5.1 (already in the shell) | Now also used by the rule editor, shared as a singleton            | no change                                          |
 
-No data-fetching library in this spec (TanStack Query is the follow-up).
+No data-fetching library in this spec (TanStack Query is deferred to the end of the project, if needed).
 
 ## Tasks
 
@@ -107,5 +107,5 @@ Checked first, because the screens depend on it.
 
 ## Not in this plan
 
-- TanStack Query (the follow-up).
+- TanStack Query (deferred to the end of the project, if needed).
 - The simulator, AI features, version comparison, autosave, undo, drag-and-drop.

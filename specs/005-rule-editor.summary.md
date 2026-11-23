@@ -87,7 +87,7 @@ The first screens that do real work. A recruiter can now sign in as the demo edi
 
 ## Pain-point log: hand-written fetching
 
-What `useResource` and the screens had to do by hand. Each row is something TanStack Query does for you, to compare in the follow-up.
+What `useResource` and the screens had to do by hand. Each row is something TanStack Query does for you. Moving to it is deferred to the end of the project, if needed; until then this log is the comparison.
 
 | #   | Pain                                                                                                                                          | What we did by hand                                                                                  | What TanStack Query gives                                                                               |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -123,4 +123,4 @@ What `useResource` and the screens had to do by hand. Each row is something TanS
 
 ## Next
 
-The TanStack Query follow-up, then spec 006, the rule engine.
+Spec 006, the rule engine. (TanStack Query is deferred to the end of the project, if needed.)

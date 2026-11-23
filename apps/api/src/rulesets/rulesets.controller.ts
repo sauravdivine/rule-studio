@@ -14,11 +14,14 @@ import {
 } from '@nestjs/common';
 import {
   zCreateRulesetRequest,
+  zEvaluateRequest,
   zPinRequest,
   zPublishRequest,
   zRulesetContent,
   zUpdateRulesetRequest,
   type CreateRulesetRequest,
+  type EvaluateRequest,
+  type EvaluationResult,
   type PinRequest,
   type PublishRequest,
   type Ruleset,
@@ -34,6 +37,7 @@ import type { AuthUser } from '../auth/auth-user';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermission } from '../auth/decorators/require-permission.decorator';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe';
+import { EvaluationService } from './evaluation.service';
 import { etagOf, IfMatch } from './if-match';
 import { RulesetsService, type ListQuery } from './rulesets.service';
 
@@ -61,7 +65,10 @@ const version = new ParseIntPipe();
 // Spec 003. Every change answers with the new ETag, ready for the next If-Match.
 @Controller('api/rulesets')
 export class RulesetsController {
-  constructor(private readonly rulesets: RulesetsService) {}
+  constructor(
+    private readonly rulesets: RulesetsService,
+    private readonly evaluation: EvaluationService,
+  ) {}
 
   @Get()
   @RequirePermission('ruleset:read')
@@ -215,6 +222,17 @@ export class RulesetsController {
       res,
       await this.rulesets.unarchive(rulesetId, revision, user),
     );
+  }
+
+  // Spec 006: one record against the live version, the draft or a version number.
+  @Post(':id/evaluate')
+  @HttpCode(200)
+  @RequirePermission('simulation:run')
+  evaluate(
+    @Param('id', id) rulesetId: string,
+    @Body(new ZodValidationPipe(zEvaluateRequest)) body: EvaluateRequest,
+  ): Promise<EvaluationResult> {
+    return this.evaluation.evaluate(rulesetId, body);
   }
 }
 
