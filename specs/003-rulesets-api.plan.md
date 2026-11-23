@@ -1,7 +1,7 @@
 # 003 · Rulesets API: implementation plan
 
 **Spec:** [003-rulesets-api.md](003-rulesets-api.md) (approved 22 Nov 2026)
-**Status:** Awaiting approval
+**Status:** Approved and built (22 Nov 2026). What was built: [003-rulesets-api.summary.md](003-rulesets-api.summary.md)
 
 Built in one go once approved (see "How we work" in `CLAUDE.md`), then summarised in `003-rulesets-api.summary.md`. The owner runs the commands the AI can't run on the Mac (install, migration, seed) and commits.
 

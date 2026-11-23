@@ -1,6 +1,6 @@
 # 003 · Rulesets API
 
-**Status:** Approved (22 Nov 2026). Plan: [003-rulesets-api.plan.md](003-rulesets-api.plan.md)
+**Status:** Built (22 Nov 2026). Plan: [003-rulesets-api.plan.md](003-rulesets-api.plan.md) · Summary: [003-rulesets-api.summary.md](003-rulesets-api.summary.md)
 **Depends on:** [001 · Ruleset data model](001-ruleset-data-model.md), [002 · Auth](002-auth.md)
 **Contract:** `contracts/openapi.yaml` (the endpoints below are added to it first, then built)
 
@@ -158,18 +158,18 @@ The seed adds the example ruleset from spec 001 (`loan-approval.json`) with two 
 
 ## Acceptance criteria
 
-- [ ] Every endpoint above is in `contracts/openapi.yaml` first, and the generated types and Zod schemas are used by the API.
-- [ ] A viewer can read everything and gets `403` on every change; an editor gets `403` on pin and archive.
-- [ ] Two saves with the same `If-Match`: the first succeeds, the second gets `412`. A save without `If-Match` gets `428`.
-- [ ] Saving a draft that breaks the JSON Schema gets `400`; saving one with cross-field problems succeeds and returns them.
-- [ ] Publishing: an invalid draft gets `422`; an unchanged draft gets `409`; the first publish makes v1 live; later publishes move the live version only with `makeLive: true`.
-- [ ] Published versions never change: restoring, saving and publishing again leave earlier versions' content and hash identical.
-- [ ] Rollback: restoring v1 into the draft and publishing creates v3 with v1's hash.
-- [ ] `hasUnpublishedChanges` is false right after publishing and after restoring the latest version; reordering JSON keys in a save doesn't count as a change.
-- [ ] Archived rulesets are read-only (`409` on change), hidden from the default list, shown with `status=archived`, and keep their live version.
-- [ ] Ruleset names are unique ignoring case (`409`).
-- [ ] Each cross-field rule in `libs/ruleset-validation` has a failing example.
-- [ ] Each criterion above has an automated test against a real Postgres.
+- [x] Every endpoint above is in `contracts/openapi.yaml` first, and the generated types and Zod schemas are used by the API.
+- [x] A viewer can read everything and gets `403` on every change; an editor gets `403` on pin and archive.
+- [x] Two saves with the same `If-Match`: the first succeeds, the second gets `412`. A save without `If-Match` gets `428`.
+- [x] Saving a draft that breaks the JSON Schema gets `400`; saving one with cross-field problems succeeds and returns them.
+- [x] Publishing: an invalid draft gets `422`; an unchanged draft gets `409`; the first publish makes v1 live; later publishes move the live version only with `makeLive: true`.
+- [x] Published versions never change: restoring, saving and publishing again leave earlier versions' content and hash identical.
+- [x] Rollback: restoring v1 into the draft and publishing creates v3 with v1's hash.
+- [x] `hasUnpublishedChanges` is false right after publishing and after restoring the latest version; reordering JSON keys in a save doesn't count as a change.
+- [x] Archived rulesets are read-only (`409` on change), hidden from the default list, shown with `status=archived`, and keep their live version.
+- [x] Ruleset names are unique ignoring case (`409`).
+- [x] Each cross-field rule in `libs/ruleset-validation` has a failing example.
+- [x] Each criterion above has an automated test against a real Postgres.
 
 ## Decisions (approved 22 Nov 2026)
 

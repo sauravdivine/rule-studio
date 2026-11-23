@@ -52,7 +52,7 @@ export async function createTestApp(
 
 export async function resetDatabase(prisma: PrismaService): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "refresh_tokens", "users" CASCADE',
+    'TRUNCATE TABLE "ruleset_versions", "rulesets", "refresh_tokens", "users" CASCADE',
   );
 }
 
@@ -71,4 +71,12 @@ export async function createUser(
       passwordHash: await hashPassword(TEST_PASSWORD),
     },
   });
+}
+
+// Empties only the rulesets tables, keeping users and their sessions. Much faster
+// than resetDatabase between tests, because users need slow Argon2 hashes.
+export async function resetRulesets(prisma: PrismaService): Promise<void> {
+  await prisma.$executeRawUnsafe(
+    'TRUNCATE TABLE "ruleset_versions", "rulesets"',
+  );
 }

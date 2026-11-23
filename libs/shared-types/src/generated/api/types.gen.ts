@@ -71,6 +71,260 @@ export type Jwks = {
   keys: Array<Jwk>;
 };
 
+export type RulesetContent = RulesetSchemaRulesetContent;
+
+export type UserRef = {
+  id: string;
+  displayName: string;
+};
+
+export type ValidationProblem = {
+  /**
+   * JSON Pointer into the draft, e.g. `/rules/2/when/children/0/field`.
+   */
+  path: string;
+  message: string;
+};
+
+export type RulesetValidation = {
+  valid: boolean;
+  problems: Array<ValidationProblem>;
+};
+
+export type RulesetSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  /**
+   * Bumped by every change. Also sent as the ETag.
+   */
+  revision: number;
+  /**
+   * The draft differs from the latest published version (true before the first publish).
+   */
+  hasUnpublishedChanges: boolean;
+  latestVersion: number | null;
+  liveVersion: number | null;
+  archivedAt: string | null;
+  createdAt: string;
+  createdBy: UserRef;
+  updatedAt: string;
+  updatedBy: UserRef;
+};
+
+/**
+ * A ruleset with its working draft.
+ */
+export type Ruleset = RulesetSummary & {
+  draft: RulesetSchemaRulesetContent;
+  validation: RulesetValidation;
+};
+
+export type RulesetPage = {
+  items: Array<RulesetSummary>;
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type CreateRulesetRequest = {
+  name: string;
+  description?: string;
+};
+
+export type UpdateRulesetRequest = {
+  name?: string;
+  /**
+   * An empty string clears it.
+   */
+  description?: string;
+};
+
+export type PublishRequest = {
+  comment?: string;
+  /**
+   * Also make the new version live. The first publish is always made live.
+   */
+  makeLive?: boolean;
+};
+
+export type PinRequest = {
+  version: number;
+};
+
+export type RulesetVersionSummary = {
+  version: number;
+  comment: string | null;
+  /**
+   * SHA-256 of the RFC 8785 canonical JSON of the content.
+   */
+  contentHash: string;
+  publishedAt: string;
+  publishedBy: UserRef;
+  isLive: boolean;
+};
+
+/**
+ * A published version with its frozen content.
+ */
+export type RulesetVersion = RulesetVersionSummary & {
+  content: RulesetSchemaRulesetContent;
+};
+
+export type StaleRevisionProblem = ProblemDetails & {
+  currentRevision: number;
+};
+
+export type InvalidDraftProblem = ProblemDetails & {
+  problems: Array<ValidationProblem>;
+};
+
+export type Action = {
+  decision: Decision;
+  reason?: string;
+};
+
+export type BetweenCondition = {
+  type: 'condition';
+  field: string;
+  operator: 'BETWEEN';
+  /**
+   * [min, max], inclusive
+   */
+  value: [OrderedValue, OrderedValue];
+};
+
+/**
+ * A single comparison. The allowed value shape depends on the operator; per-field-type checks happen in code (spec 001, Validation split).
+ */
+export type Condition =
+  | SingleValueCondition
+  | BetweenCondition
+  | ListCondition
+  | TextCondition
+  | EmptinessCondition;
+
+/**
+ * Top-level group (depth 1). Children may be conditions or depth-2 groups.
+ */
+export type ConditionGroup = {
+  type: 'group';
+  operator: LogicalOperator;
+  children: Array<Condition | ConditionGroupLevel2>;
+};
+
+/**
+ * Nested group (depth 2). Children may be conditions or depth-3 groups.
+ */
+export type ConditionGroupLevel2 = {
+  type: 'group';
+  operator: LogicalOperator;
+  children: Array<Condition | ConditionGroupLevel3>;
+};
+
+/**
+ * Deepest group (depth 3). Children may only be conditions.
+ */
+export type ConditionGroupLevel3 = {
+  type: 'group';
+  operator: LogicalOperator;
+  children: Array<Condition>;
+};
+
+export type Decision = 'APPROVE' | 'REJECT' | 'REFER';
+
+export type EmptinessCondition = {
+  type: 'condition';
+  field: string;
+  operator: 'IS_EMPTY' | 'IS_NOT_EMPTY';
+};
+
+export type FieldType = 'NUMBER' | 'STRING' | 'BOOLEAN' | 'DATE';
+
+/**
+ * FIRST: the first matching rule (by priority) decides. PRIORITY: all matching rules fire; the strictest decision wins.
+ */
+export type HitStrategy = 'FIRST' | 'PRIORITY';
+
+export type InputField = {
+  key: string;
+  label: string;
+  type: FieldType;
+  allowedValues?: Array<string>;
+};
+
+/**
+ * The input data model: the fields rules may reference.
+ */
+export type InputFields = Array<InputField>;
+
+export type ListCondition = {
+  type: 'condition';
+  field: string;
+  operator: 'IN' | 'NOT_IN';
+  value: Array<OrderedValue>;
+};
+
+export type LogicalOperator = 'AND' | 'OR';
+
+export type OrderedValue = string | number;
+
+export type Rule = {
+  id: string;
+  name: string;
+  description?: string;
+  priority: number;
+  enabled: boolean;
+  when: ConditionGroup;
+  then: Action;
+};
+
+export type Rules = Array<Rule>;
+
+/**
+ * The versioned part of a ruleset: what a draft holds and a published version freezes (spec 003). Identity (name, description) and metadata are not part of it.
+ */
+export type RulesetSchemaRulesetContent = {
+  schemaVersion: SchemaVersion;
+  inputFields: InputFields;
+  hitStrategy: HitStrategy;
+  /**
+   * The action taken when no rule fires.
+   */
+  defaultAction: Action;
+  rules: Rules;
+};
+
+export type ScalarValue = string | number | boolean;
+
+/**
+ * Version of this JSON format, not of the ruleset's content. Bumped only when the format changes.
+ */
+export type SchemaVersion = 1;
+
+export type SingleValueCondition = {
+  type: 'condition';
+  field: string;
+  operator: 'EQ' | 'NEQ' | 'GT' | 'GTE' | 'LT' | 'LTE';
+  value: ScalarValue;
+};
+
+export type TextCondition = {
+  type: 'condition';
+  field: string;
+  operator: 'CONTAINS' | 'STARTS_WITH';
+  value: string;
+};
+
+export type RulesetId = string;
+
+export type Version = number;
+
+/**
+ * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+ */
+export type IfMatch = string;
+
 export type LoginData = {
   body: LoginRequest;
   path?: never;
@@ -171,6 +425,581 @@ export type GetCurrentUserResponses = {
 
 export type GetCurrentUserResponse =
   GetCurrentUserResponses[keyof GetCurrentUserResponses];
+
+export type ListRulesetsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    status?: 'active' | 'archived';
+    /**
+     * Case-insensitive text the name must contain.
+     */
+    q?: string;
+    page?: number;
+    pageSize?: number;
+  };
+  url: '/api/rulesets';
+};
+
+export type ListRulesetsErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+};
+
+export type ListRulesetsError = ListRulesetsErrors[keyof ListRulesetsErrors];
+
+export type ListRulesetsResponses = {
+  /**
+   * One page of rulesets, most recently updated first.
+   */
+  200: RulesetPage;
+};
+
+export type ListRulesetsResponse =
+  ListRulesetsResponses[keyof ListRulesetsResponses];
+
+export type CreateRulesetData = {
+  body: CreateRulesetRequest;
+  path?: never;
+  query?: never;
+  url: '/api/rulesets';
+};
+
+export type CreateRulesetErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+};
+
+export type CreateRulesetError = CreateRulesetErrors[keyof CreateRulesetErrors];
+
+export type CreateRulesetResponses = {
+  /**
+   * Created.
+   */
+  201: Ruleset;
+};
+
+export type CreateRulesetResponse =
+  CreateRulesetResponses[keyof CreateRulesetResponses];
+
+export type GetRulesetData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}';
+};
+
+export type GetRulesetErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+};
+
+export type GetRulesetError = GetRulesetErrors[keyof GetRulesetErrors];
+
+export type GetRulesetResponses = {
+  /**
+   * The ruleset.
+   */
+  200: Ruleset;
+};
+
+export type GetRulesetResponse = GetRulesetResponses[keyof GetRulesetResponses];
+
+export type UpdateRulesetData = {
+  body: UpdateRulesetRequest;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}';
+};
+
+export type UpdateRulesetErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type UpdateRulesetError = UpdateRulesetErrors[keyof UpdateRulesetErrors];
+
+export type UpdateRulesetResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type UpdateRulesetResponse =
+  UpdateRulesetResponses[keyof UpdateRulesetResponses];
+
+export type SaveDraftData = {
+  body: RulesetSchemaRulesetContent;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/draft';
+};
+
+export type SaveDraftErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type SaveDraftError = SaveDraftErrors[keyof SaveDraftErrors];
+
+export type SaveDraftResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type SaveDraftResponse = SaveDraftResponses[keyof SaveDraftResponses];
+
+export type ListVersionsData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/versions';
+};
+
+export type ListVersionsErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+};
+
+export type ListVersionsError = ListVersionsErrors[keyof ListVersionsErrors];
+
+export type ListVersionsResponses = {
+  /**
+   * Every published version.
+   */
+  200: Array<RulesetVersionSummary>;
+};
+
+export type ListVersionsResponse =
+  ListVersionsResponses[keyof ListVersionsResponses];
+
+export type PublishDraftData = {
+  body: PublishRequest;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/versions';
+};
+
+export type PublishDraftErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * The draft has cross-field problems, so it can't be published.
+   */
+  422: InvalidDraftProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type PublishDraftError = PublishDraftErrors[keyof PublishDraftErrors];
+
+export type PublishDraftResponses = {
+  /**
+   * Published.
+   */
+  201: RulesetVersion;
+};
+
+export type PublishDraftResponse =
+  PublishDraftResponses[keyof PublishDraftResponses];
+
+export type GetVersionData = {
+  body?: never;
+  path: {
+    id: string;
+    version: number;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/versions/{version}';
+};
+
+export type GetVersionErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+};
+
+export type GetVersionError = GetVersionErrors[keyof GetVersionErrors];
+
+export type GetVersionResponses = {
+  /**
+   * The version.
+   */
+  200: RulesetVersion;
+};
+
+export type GetVersionResponse = GetVersionResponses[keyof GetVersionResponses];
+
+export type RestoreVersionData = {
+  body?: never;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+    version: number;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/versions/{version}/restore';
+};
+
+export type RestoreVersionErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type RestoreVersionError =
+  RestoreVersionErrors[keyof RestoreVersionErrors];
+
+export type RestoreVersionResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type RestoreVersionResponse =
+  RestoreVersionResponses[keyof RestoreVersionResponses];
+
+export type PinLiveVersionData = {
+  body: PinRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/live';
+};
+
+export type PinLiveVersionErrors = {
+  /**
+   * The request body is invalid.
+   */
+  400: ProblemDetails;
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+};
+
+export type PinLiveVersionError =
+  PinLiveVersionErrors[keyof PinLiveVersionErrors];
+
+export type PinLiveVersionResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type PinLiveVersionResponse =
+  PinLiveVersionResponses[keyof PinLiveVersionResponses];
+
+export type ArchiveRulesetData = {
+  body?: never;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/archive';
+};
+
+export type ArchiveRulesetErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type ArchiveRulesetError =
+  ArchiveRulesetErrors[keyof ArchiveRulesetErrors];
+
+export type ArchiveRulesetResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type ArchiveRulesetResponse =
+  ArchiveRulesetResponses[keyof ArchiveRulesetResponses];
+
+export type UnarchiveRulesetData = {
+  body?: never;
+  headers: {
+    /**
+     * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+     */
+    'If-Match': string;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: '/api/rulesets/{id}/unarchive';
+};
+
+export type UnarchiveRulesetErrors = {
+  /**
+   * Not signed in, or the token is missing, expired or revoked.
+   */
+  401: ProblemDetails;
+  /**
+   * Signed in, but without the permission this needs.
+   */
+  403: ProblemDetails;
+  /**
+   * No such ruleset or version.
+   */
+  404: ProblemDetails;
+  /**
+   * The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+   */
+  409: ProblemDetails;
+  /**
+   * Someone changed the ruleset since you read it. Reload and reapply.
+   */
+  412: StaleRevisionProblem;
+  /**
+   * Change requests must send If-Match.
+   */
+  428: ProblemDetails;
+};
+
+export type UnarchiveRulesetError =
+  UnarchiveRulesetErrors[keyof UnarchiveRulesetErrors];
+
+export type UnarchiveRulesetResponses = {
+  /**
+   * The ruleset after the change.
+   */
+  200: Ruleset;
+};
+
+export type UnarchiveRulesetResponse =
+  UnarchiveRulesetResponses[keyof UnarchiveRulesetResponses];
 
 export type GetJwksData = {
   body?: never;

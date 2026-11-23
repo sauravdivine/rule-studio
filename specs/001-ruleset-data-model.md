@@ -134,7 +134,7 @@ Rulesets will later be able to define `outputFields` (e.g. `creditLimit`, `inter
 - [x] A condition with an unknown `operator` fails schema validation.
 - [x] `schemaVersion` other than `1`, an unknown `hitStrategy`, and a bare-string `defaultAction` fail schema validation.
 - [x] `libs/shared-types` contains TypeScript types generated from the schema by `npm run contracts:types`, and the workspace typechecks.
-- [ ] Each cross-field rule above has a failing example documented for the rule editor and rule engine tests (specs 005 and 006).
+- [x] Each cross-field rule above has a failing example (`libs/ruleset-validation`, built in spec 003), used by the API and, from spec 005, the rule editor.
 
 ## Out of scope
 

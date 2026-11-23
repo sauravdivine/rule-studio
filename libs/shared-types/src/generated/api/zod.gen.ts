@@ -61,6 +61,254 @@ export const zJwks = z.object({
   keys: z.array(zJwk).min(1),
 });
 
+export const zUserRef = z.object({
+  id: z.uuid(),
+  displayName: z.string(),
+});
+
+export const zValidationProblem = z.object({
+  path: z.string(),
+  message: z.string(),
+});
+
+export const zRulesetValidation = z.object({
+  valid: z.boolean(),
+  problems: z.array(zValidationProblem),
+});
+
+export const zRulesetSummary = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  revision: z.int().gte(1),
+  hasUnpublishedChanges: z.boolean(),
+  latestVersion: z.int().gte(1).nullable(),
+  liveVersion: z.int().gte(1).nullable(),
+  archivedAt: z.iso.datetime().nullable(),
+  createdAt: z.iso.datetime(),
+  createdBy: zUserRef,
+  updatedAt: z.iso.datetime(),
+  updatedBy: zUserRef,
+});
+
+export const zRulesetPage = z.object({
+  items: z.array(zRulesetSummary),
+  total: z.int().gte(0),
+  page: z.int().gte(1),
+  pageSize: z.int().gte(1),
+});
+
+export const zCreateRulesetRequest = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+});
+
+export const zUpdateRulesetRequest = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(500).optional(),
+});
+
+export const zPublishRequest = z.object({
+  comment: z.string().max(500).optional(),
+  makeLive: z.boolean().optional().default(false),
+});
+
+export const zPinRequest = z.object({
+  version: z.int().gte(1),
+});
+
+export const zRulesetVersionSummary = z.object({
+  version: z.int().gte(1),
+  comment: z.string().max(500).nullable(),
+  contentHash: z.string().regex(/^[0-9a-f]{64}$/),
+  publishedAt: z.iso.datetime(),
+  publishedBy: zUserRef,
+  isLive: z.boolean(),
+});
+
+export const zStaleRevisionProblem = zProblemDetails.and(
+  z.object({
+    currentRevision: z.int().gte(1),
+  }),
+);
+
+export const zInvalidDraftProblem = zProblemDetails.and(
+  z.object({
+    problems: z.array(zValidationProblem),
+  }),
+);
+
+export const zDecision = z.enum(['APPROVE', 'REJECT', 'REFER']);
+
+export const zAction = z.object({
+  decision: zDecision,
+  reason: z.string().max(200).optional(),
+});
+
+export const zEmptinessCondition = z.object({
+  type: z.literal('condition'),
+  field: z.string(),
+  operator: z.enum(['IS_EMPTY', 'IS_NOT_EMPTY']),
+});
+
+export const zFieldType = z.enum(['NUMBER', 'STRING', 'BOOLEAN', 'DATE']);
+
+/**
+ * FIRST: the first matching rule (by priority) decides. PRIORITY: all matching rules fire; the strictest decision wins.
+ */
+export const zHitStrategy = z.enum(['FIRST', 'PRIORITY']);
+
+export const zInputField = z.object({
+  key: z
+    .string()
+    .max(50)
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+  label: z.string().min(1).max(100),
+  type: zFieldType,
+  allowedValues: z.array(z.string().min(1)).min(1).max(100).optional(),
+});
+
+/**
+ * The input data model: the fields rules may reference.
+ */
+export const zInputFields = z.array(zInputField).min(1).max(50);
+
+export const zLogicalOperator = z.enum(['AND', 'OR']);
+
+export const zOrderedValue = z.union([z.string(), z.number()]);
+
+export const zBetweenCondition = z.object({
+  type: z.literal('condition'),
+  field: z.string(),
+  operator: z.literal('BETWEEN'),
+  value: z.tuple([zOrderedValue, zOrderedValue]),
+});
+
+export const zListCondition = z.object({
+  type: z.literal('condition'),
+  field: z.string(),
+  operator: z.enum(['IN', 'NOT_IN']),
+  value: z.array(zOrderedValue).min(1).max(50),
+});
+
+export const zScalarValue = z.union([z.string(), z.number(), z.boolean()]);
+
+/**
+ * Version of this JSON format, not of the ruleset's content. Bumped only when the format changes.
+ */
+export const zSchemaVersion = z.literal(1);
+
+export const zSingleValueCondition = z.object({
+  type: z.literal('condition'),
+  field: z.string(),
+  operator: z.enum(['EQ', 'NEQ', 'GT', 'GTE', 'LT', 'LTE']),
+  value: zScalarValue,
+});
+
+export const zTextCondition = z.object({
+  type: z.literal('condition'),
+  field: z.string(),
+  operator: z.enum(['CONTAINS', 'STARTS_WITH']),
+  value: z.string().min(1),
+});
+
+/**
+ * A single comparison. The allowed value shape depends on the operator; per-field-type checks happen in code (spec 001, Validation split).
+ */
+export const zCondition = z.union([
+  zSingleValueCondition,
+  zBetweenCondition,
+  zListCondition,
+  zTextCondition,
+  zEmptinessCondition,
+]);
+
+/**
+ * Deepest group (depth 3). Children may only be conditions.
+ */
+export const zConditionGroupLevel3 = z.object({
+  type: z.literal('group'),
+  operator: zLogicalOperator,
+  children: z.array(zCondition).min(1).max(20),
+});
+
+/**
+ * Nested group (depth 2). Children may be conditions or depth-3 groups.
+ */
+export const zConditionGroupLevel2 = z.object({
+  type: z.literal('group'),
+  operator: zLogicalOperator,
+  children: z
+    .array(z.union([zCondition, zConditionGroupLevel3]))
+    .min(1)
+    .max(20),
+});
+
+/**
+ * Top-level group (depth 1). Children may be conditions or depth-2 groups.
+ */
+export const zConditionGroup = z.object({
+  type: z.literal('group'),
+  operator: zLogicalOperator,
+  children: z
+    .array(z.union([zCondition, zConditionGroupLevel2]))
+    .min(1)
+    .max(20),
+});
+
+export const zRule = z.object({
+  id: z.uuid(),
+  name: z.string().min(1).max(100),
+  description: z.string().max(500).optional(),
+  priority: z.int().gte(1),
+  enabled: z.boolean(),
+  when: zConditionGroup,
+  then: zAction,
+});
+
+export const zRules = z.array(zRule).max(200);
+
+/**
+ * The versioned part of a ruleset: what a draft holds and a published version freezes (spec 003). Identity (name, description) and metadata are not part of it.
+ */
+export const zRulesetSchemaRulesetContent = z.object({
+  schemaVersion: zSchemaVersion,
+  inputFields: zInputFields,
+  hitStrategy: zHitStrategy,
+  defaultAction: zAction,
+  rules: zRules,
+});
+
+export const zRulesetContent = zRulesetSchemaRulesetContent;
+
+/**
+ * A ruleset with its working draft.
+ */
+export const zRuleset = zRulesetSummary.and(
+  z.object({
+    draft: zRulesetSchemaRulesetContent,
+    validation: zRulesetValidation,
+  }),
+);
+
+/**
+ * A published version with its frozen content.
+ */
+export const zRulesetVersion = zRulesetVersionSummary.and(
+  z.object({
+    content: zRulesetSchemaRulesetContent,
+  }),
+);
+
+export const zRulesetId = z.uuid();
+
+export const zVersion = z.int().gte(1);
+
+/**
+ * The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+ */
+export const zIfMatch = z.string();
+
 export const zLoginBody = zLoginRequest;
 
 /**
@@ -82,6 +330,149 @@ export const zLogoutResponse = z.void();
  * The signed-in user.
  */
 export const zGetCurrentUserResponse = zUser;
+
+export const zListRulesetsQuery = z.object({
+  status: z.enum(['active', 'archived']).optional().default('active'),
+  q: z.string().max(100).optional(),
+  page: z.int().gte(1).optional().default(1),
+  pageSize: z.int().gte(1).lte(100).optional().default(20),
+});
+
+/**
+ * One page of rulesets, most recently updated first.
+ */
+export const zListRulesetsResponse = zRulesetPage;
+
+export const zCreateRulesetBody = zCreateRulesetRequest;
+
+/**
+ * Created.
+ */
+export const zCreateRulesetResponse = zRuleset;
+
+export const zGetRulesetPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset.
+ */
+export const zGetRulesetResponse = zRuleset;
+
+export const zUpdateRulesetBody = zUpdateRulesetRequest;
+
+export const zUpdateRulesetHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zUpdateRulesetPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zUpdateRulesetResponse = zRuleset;
+
+export const zSaveDraftBody = zRulesetSchemaRulesetContent;
+
+export const zSaveDraftHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zSaveDraftPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zSaveDraftResponse = zRuleset;
+
+export const zListVersionsPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Every published version.
+ */
+export const zListVersionsResponse = z.array(zRulesetVersionSummary);
+
+export const zPublishDraftBody = zPublishRequest;
+
+export const zPublishDraftHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zPublishDraftPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Published.
+ */
+export const zPublishDraftResponse = zRulesetVersion;
+
+export const zGetVersionPath = z.object({
+  id: z.uuid(),
+  version: z.int().gte(1),
+});
+
+/**
+ * The version.
+ */
+export const zGetVersionResponse = zRulesetVersion;
+
+export const zRestoreVersionHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zRestoreVersionPath = z.object({
+  id: z.uuid(),
+  version: z.int().gte(1),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zRestoreVersionResponse = zRuleset;
+
+export const zPinLiveVersionBody = zPinRequest;
+
+export const zPinLiveVersionPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zPinLiveVersionResponse = zRuleset;
+
+export const zArchiveRulesetHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zArchiveRulesetPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zArchiveRulesetResponse = zRuleset;
+
+export const zUnarchiveRulesetHeaders = z.object({
+  'If-Match': z.string(),
+});
+
+export const zUnarchiveRulesetPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The ruleset after the change.
+ */
+export const zUnarchiveRulesetResponse = zRuleset;
 
 /**
  * The JSON Web Key Set.

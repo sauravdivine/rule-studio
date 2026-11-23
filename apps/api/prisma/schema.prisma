@@ -1,4 +1,4 @@
-// Database schema for the API (spec 002). After changing it:
+// Database schema for the API (specs 002 and 003). After changing it:
 //   npx nx run api:db-migrate   creates and applies a migration
 // The client is generated into src/generated/prisma (git-ignored) by `nx run api:prisma-generate`,
 // which build, serve, test and typecheck run automatically.
@@ -30,6 +30,10 @@ model User {
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
   refreshTokens RefreshToken[]
 
+  rulesetsCreated   Ruleset[]        @relation("RulesetCreatedBy")
+  rulesetsUpdated   Ruleset[]        @relation("RulesetUpdatedBy")
+  versionsPublished RulesetVersion[] @relation("VersionPublishedBy")
+
   @@map("users")
 }
 
@@ -48,4 +52,54 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+/// A ruleset and its working draft (spec 003). Identity (name, description) is
+/// not versioned; the draft is the versioned content, frozen into RulesetVersion
+/// on publish.
+model Ruleset {
+  id            String           @id @default(uuid()) @db.Uuid
+  name          String
+  /// The name lower-cased, so names are unique ignoring case. Set by the service.
+  nameKey       String           @unique @map("name_key")
+  description   String?
+  /// The working draft's versioned content (RulesetContent in the contract).
+  draft         Json
+  /// SHA-256 of the draft's canonical JSON (RFC 8785).
+  draftHash     String           @map("draft_hash")
+  /// Bumped by every change; sent as the ETag (optimistic locking).
+  revision      Int              @default(1)
+  latestVersion Int?             @map("latest_version")
+  /// contentHash of the latest version, kept here so lists can tell whether
+  /// the draft has unpublished changes without reading the versions table.
+  latestHash    String?          @map("latest_hash")
+  liveVersion   Int?             @map("live_version")
+  archivedAt    DateTime?        @map("archived_at") @db.Timestamptz(3)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  createdById   String           @map("created_by_id") @db.Uuid
+  createdBy     User             @relation("RulesetCreatedBy", fields: [createdById], references: [id])
+  updatedAt     DateTime         @default(now()) @map("updated_at") @db.Timestamptz(3)
+  updatedById   String           @map("updated_by_id") @db.Uuid
+  updatedBy     User             @relation("RulesetUpdatedBy", fields: [updatedById], references: [id])
+  versions      RulesetVersion[]
+
+  @@index([updatedAt])
+  @@map("rulesets")
+}
+
+/// A published version: a frozen copy of the draft. Append-only: the API never
+/// updates or deletes these rows.
+model RulesetVersion {
+  rulesetId     String   @map("ruleset_id") @db.Uuid
+  ruleset       Ruleset  @relation(fields: [rulesetId], references: [id], onDelete: Restrict)
+  version       Int
+  content       Json
+  contentHash   String   @map("content_hash")
+  comment       String?
+  publishedAt   DateTime @default(now()) @map("published_at") @db.Timestamptz(3)
+  publishedById String   @map("published_by_id") @db.Uuid
+  publishedBy   User     @relation("VersionPublishedBy", fields: [publishedById], references: [id])
+
+  @@id([rulesetId, version])
+  @@map("ruleset_versions")
 }

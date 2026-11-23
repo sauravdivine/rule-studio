@@ -14,6 +14,8 @@ servers:
 tags:
   - name: auth
     description: Sign-in, token refresh and sign-out (spec 002)
+  - name: rulesets
+    description: Rulesets, drafts, published versions and the live version (spec 003)
 
 # Every endpoint needs an access token unless it overrides this with its own `security`.
 security:
@@ -104,6 +106,369 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /api/rulesets:
+    get:
+      tags: [rulesets]
+      operationId: listRulesets
+      summary: List rulesets (summaries, no rule content)
+      x-permission: ruleset:read
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+            default: active
+        - name: q
+          in: query
+          description: Case-insensitive text the name must contain.
+          schema:
+            type: string
+            maxLength: 100
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: One page of rulesets, most recently updated first.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [rulesets]
+      operationId: createRuleset
+      summary: Create a ruleset with a starter draft
+      x-permission: ruleset:edit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRulesetRequest'
+      responses:
+        '201':
+          description: Created.
+          headers:
+            Location:
+              schema:
+                type: string
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ruleset'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/rulesets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    get:
+      tags: [rulesets]
+      operationId: getRuleset
+      summary: A ruleset with its draft and validation result
+      x-permission: ruleset:read
+      responses:
+        '200':
+          description: The ruleset.
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ruleset'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [rulesets]
+      operationId: updateRuleset
+      summary: Change the name or description (not versioned, takes effect at once)
+      x-permission: ruleset:edit
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRulesetRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /api/rulesets/{id}/draft:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    put:
+      tags: [rulesets]
+      operationId: saveDraft
+      summary: Replace the draft's content. Cross-field problems are returned, not refused.
+      x-permission: ruleset:edit
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RulesetContent'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /api/rulesets/{id}/versions:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    get:
+      tags: [rulesets]
+      operationId: listVersions
+      summary: Version history, newest first (no content)
+      x-permission: ruleset:read
+      responses:
+        '200':
+          description: Every published version.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RulesetVersionSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [rulesets]
+      operationId: publishDraft
+      summary: Publish the draft as a new, immutable version
+      x-permission: ruleset:publish
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRequest'
+      responses:
+        '201':
+          description: Published.
+          headers:
+            Location:
+              schema:
+                type: string
+            ETag:
+              $ref: '#/components/headers/ETag'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '422':
+          $ref: '#/components/responses/InvalidDraft'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /api/rulesets/{id}/versions/{version}:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+      - $ref: '#/components/parameters/Version'
+    get:
+      tags: [rulesets]
+      operationId: getVersion
+      summary: One published version with its frozen content
+      x-permission: ruleset:read
+      responses:
+        '200':
+          description: The version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RulesetVersion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/rulesets/{id}/versions/{version}/restore:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+      - $ref: '#/components/parameters/Version'
+    post:
+      tags: [rulesets]
+      operationId: restoreVersion
+      summary: Copy a version's content into the draft (rollback, step 1)
+      x-permission: ruleset:edit
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /api/rulesets/{id}/live:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    put:
+      tags: [rulesets]
+      operationId: pinLiveVersion
+      summary: Make a published version the live one
+      x-permission: ruleset:pin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PinRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /api/rulesets/{id}/archive:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    post:
+      tags: [rulesets]
+      operationId: archiveRuleset
+      summary: Archive (read-only, hidden from the default list, keeps its live version)
+      x-permission: ruleset:archive
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
+  /api/rulesets/{id}/unarchive:
+    parameters:
+      - $ref: '#/components/parameters/RulesetId'
+    post:
+      tags: [rulesets]
+      operationId: unarchiveRuleset
+      summary: Make an archived ruleset editable again
+      x-permission: ruleset:archive
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '200':
+          $ref: '#/components/responses/RulesetChanged'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '428':
+          $ref: '#/components/responses/PreconditionRequired'
+
   /.well-known/jwks.json:
     get:
       tags: [auth]
@@ -119,6 +484,29 @@ paths:
                 $ref: '#/components/schemas/Jwks'
 
 components:
+  parameters:
+    RulesetId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    Version:
+      name: version
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: The ETag from the last read (e.g. `"14"`). Optimistic locking, spec 003.
+      schema:
+        type: string
+
   securitySchemes:
     bearerAuth:
       type: http
@@ -132,6 +520,10 @@ components:
       description: Opaque refresh token, valid for 7 days. HttpOnly, Secure, SameSite=Strict, Path=/api/auth.
 
   headers:
+    ETag:
+      description: The ruleset's revision as a strong ETag, e.g. `"14"`. Send it back in If-Match.
+      schema:
+        type: string
     SetRefreshCookie:
       description: '`rs_refresh=<token>; HttpOnly; Secure; SameSite=Strict; Path=/api/auth; Max-Age=604800`'
       schema:
@@ -142,6 +534,51 @@ components:
         type: string
 
   responses:
+    Forbidden:
+      description: Signed in, but without the permission this needs.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    NotFound:
+      description: No such ruleset or version.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    Conflict:
+      description: The change conflicts with the ruleset's state (name taken, nothing to publish, archived, nothing published to pin).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    PreconditionFailed:
+      description: Someone changed the ruleset since you read it. Reload and reapply.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/StaleRevisionProblem'
+    PreconditionRequired:
+      description: Change requests must send If-Match.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    InvalidDraft:
+      description: The draft has cross-field problems, so it can't be published.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/InvalidDraftProblem'
+    RulesetChanged:
+      description: The ruleset after the change.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Ruleset'
     BadRequest:
       description: The request body is invalid.
       content:
@@ -284,3 +721,232 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/Jwk'
+
+    # --- Rulesets (spec 003) ---
+
+    # The versioned part of a ruleset (spec 001), defined once in ruleset.schema.json.
+    RulesetContent:
+      $ref: './ruleset.schema.json#/$defs/RulesetContent'
+
+    UserRef:
+      type: object
+      additionalProperties: false
+      required: [id, displayName]
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+
+    ValidationProblem:
+      type: object
+      additionalProperties: false
+      required: [path, message]
+      properties:
+        path:
+          type: string
+          description: JSON Pointer into the draft, e.g. `/rules/2/when/children/0/field`.
+        message:
+          type: string
+
+    RulesetValidation:
+      type: object
+      additionalProperties: false
+      required: [valid, problems]
+      properties:
+        valid:
+          type: boolean
+        problems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationProblem'
+
+    RulesetSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          name,
+          revision,
+          hasUnpublishedChanges,
+          latestVersion,
+          liveVersion,
+          archivedAt,
+          createdAt,
+          createdBy,
+          updatedAt,
+          updatedBy,
+        ]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        revision:
+          type: integer
+          minimum: 1
+          description: Bumped by every change. Also sent as the ETag.
+        hasUnpublishedChanges:
+          type: boolean
+          description: The draft differs from the latest published version (true before the first publish).
+        latestVersion:
+          type: [integer, 'null']
+          minimum: 1
+        liveVersion:
+          type: [integer, 'null']
+          minimum: 1
+        archivedAt:
+          type: [string, 'null']
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/UserRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/UserRef'
+
+    Ruleset:
+      description: A ruleset with its working draft.
+      allOf:
+        - $ref: '#/components/schemas/RulesetSummary'
+        - type: object
+          required: [draft, validation]
+          properties:
+            draft:
+              $ref: '#/components/schemas/RulesetContent'
+            validation:
+              $ref: '#/components/schemas/RulesetValidation'
+
+    RulesetPage:
+      type: object
+      additionalProperties: false
+      required: [items, total, page, pageSize]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RulesetSummary'
+        total:
+          type: integer
+          minimum: 0
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          minimum: 1
+
+    CreateRulesetRequest:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+
+    UpdateRulesetRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+          description: An empty string clears it.
+
+    PublishRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        comment:
+          type: string
+          maxLength: 500
+        makeLive:
+          type: boolean
+          default: false
+          description: Also make the new version live. The first publish is always made live.
+
+    PinRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+
+    RulesetVersionSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [version, comment, contentHash, publishedAt, publishedBy, isLive]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        comment:
+          type: [string, 'null']
+          maxLength: 500
+        contentHash:
+          type: string
+          pattern: '^[0-9a-f]{64}$'
+          description: SHA-256 of the RFC 8785 canonical JSON of the content.
+        publishedAt:
+          type: string
+          format: date-time
+        publishedBy:
+          $ref: '#/components/schemas/UserRef'
+        isLive:
+          type: boolean
+
+    RulesetVersion:
+      description: A published version with its frozen content.
+      allOf:
+        - $ref: '#/components/schemas/RulesetVersionSummary'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              $ref: '#/components/schemas/RulesetContent'
+
+    StaleRevisionProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          required: [currentRevision]
+          properties:
+            currentRevision:
+              type: integer
+              minimum: 1
+
+    InvalidDraftProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          required: [problems]
+          properties:
+            problems:
+              type: array
+              items:
+                $ref: '#/components/schemas/ValidationProblem'

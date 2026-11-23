@@ -38,7 +38,7 @@ Specs are numbered in build order:
 | --- | ------------------------------------------- | ---------------- |
 | 001 | Ruleset data model                          | Approved         |
 | 002 | Auth                                        | Built; Mac check |
-| 003 | Rulesets API                                | Approved         |
+| 003 | Rulesets API                                | Built            |
 | 004 | UI foundation: design tokens and components | Built            |
 | 005 | Rule editor                                 | Not started      |
 | 006 | Rule engine                                 | Not started      |
@@ -62,6 +62,7 @@ libs/
   permissions/    role-to-permission map and can(), used by both the API and the frontend (spec 002)
   api-client/     stateless API client: auth header, one shared refresh on 401 (spec 002)
   host/           HostProps type the shell passes to remotes: { user, can, api } (spec 002)
+  ruleset-validation/  cross-field checks on a ruleset (spec 001's rules), shared by the API and the rule editor (spec 003)
 contracts/        JSON Schemas and the OpenAPI spec, the source of truth
   examples/       example payloads, used as test fixtures
 specs/            one markdown spec per feature, plus its plan (NNN-name.plan.md) and build summary (NNN-name.summary.md)
@@ -96,6 +97,10 @@ docs/             project docs, including commands.md (every command, what it do
 - Authorise with permissions from `libs/permissions` (`@RequirePermission(...)`), never by checking role names.
 - Configuration comes from environment variables, validated with Zod at startup. Secrets and keys are never in code.
 - The LLM is only ever called from the API. Treat all user text and model output as untrusted data: validate model output against the ruleset JSON Schema before using or returning it.
+- Optimistic locking on every endpoint that changes a ruleset: responses carry `ETag: "<revision>"`, change requests need `If-Match` (`428` without it, `412` when stale), and the write is a single `UPDATE … WHERE revision = …` (spec 003). Express's automatic ETags are off.
+- Published versions are append-only: nothing updates or deletes `ruleset_versions` rows. Rollback copies an old version into the draft.
+- Cross-field ruleset checks come from `libs/ruleset-validation`, never re-implemented in the API or the editor.
+- If the generated Zod drops a contract rule (it ignores `minProperties`, and strips unknown keys instead of refusing them), add the rule next to the schema's use and say so in a comment.
 - Tests: Vitest for unit tests, Supertest for API tests against a real Postgres.
 
 ## Commands

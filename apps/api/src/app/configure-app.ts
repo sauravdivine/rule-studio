@@ -6,5 +6,10 @@ import cookieParser from 'cookie-parser';
 export function configureApp(app: INestApplication): void {
   const expressApp = app as NestExpressApplication;
   expressApp.disable('x-powered-by'); // don't advertise the framework
+  // Express would add its own weak ETag (a hash of the body) to every response,
+  // even errors. Our ETags are ruleset revisions used for optimistic locking
+  // (spec 003), set explicitly; a body-hash ETag sent back in If-Match would be
+  // meaningless, so turn Express's off.
+  expressApp.disable('etag');
   expressApp.use(cookieParser()); // fills request.cookies, where the refresh token arrives
 }

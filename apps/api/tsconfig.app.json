@@ -39,6 +39,9 @@
       "path": "../../libs/shared-types/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/ruleset-validation/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/permissions/tsconfig.lib.json"
     }
   ]

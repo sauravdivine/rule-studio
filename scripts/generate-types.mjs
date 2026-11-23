@@ -1,43 +1,20 @@
-// Generates code in libs/shared-types from contracts/:
-//   1. TypeScript types from the JSON Schemas (json-schema-to-typescript)
-//   2. TypeScript types and Zod schemas from openapi.yaml (@hey-api/openapi-ts)
+// Generates code in libs/shared-types from contracts/openapi.yaml with @hey-api/openapi-ts:
+// TypeScript types (types.gen.ts) and Zod schemas (zod.gen.ts).
+// The ruleset data model comes in through the contract's $ref to ruleset.schema.json,
+// so one generator produces every type and there is nothing to drift (spec 003).
 // Run with: npm run contracts:types. Never edit the generated files by hand.
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { compile } from 'json-schema-to-typescript';
 import { createClient } from '@hey-api/openapi-ts';
 import * as prettier from 'prettier';
 
 const root = new URL('..', import.meta.url).pathname;
 const outDir = join(root, 'libs/shared-types/src/generated');
 mkdirSync(outDir, { recursive: true });
+// Left over from the old JSON Schema generator; the ruleset types now come from the contract.
+rmSync(join(outDir, 'ruleset.ts'), { force: true });
 
-const contracts = [
-  { schema: 'contracts/ruleset.schema.json', out: 'ruleset.ts' },
-];
-
-const banner = `/**
- * GENERATED FILE. DO NOT EDIT.
- * Source: {{source}}
- * Regenerate with: npm run contracts:types
- */`;
-
-for (const { schema, out } of contracts) {
-  const json = JSON.parse(readFileSync(join(root, schema), 'utf8'));
-  const ts = await compile(json, json.title, {
-    bannerComment: banner.replace('{{source}}', schema),
-    additionalProperties: false,
-    unreachableDefinitions: true,
-    maxItems: -1,
-    style: { singleQuote: true },
-  });
-  const path = join(outDir, out);
-  const options = (await prettier.resolveConfig(path)) ?? {};
-  writeFileSync(path, await prettier.format(ts, { ...options, filepath: path }));
-  console.log(`wrote libs/shared-types/src/generated/${out}`);
-}
-
-// 2. The HTTP API contract: types.gen.ts (types) and zod.gen.ts (runtime validators).
+// The HTTP API contract: types.gen.ts (types) and zod.gen.ts (runtime validators).
 const apiOut = join(outDir, 'api');
 rmSync(apiOut, { recursive: true, force: true });
 await createClient({

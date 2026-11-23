@@ -39,6 +39,6 @@ Open http://localhost:4200.
 
 ```bash
 npm run contracts:validate   # check the schema against examples and known-bad cases
-npm run contracts:types      # regenerate TypeScript types from the schema
+npm run contracts:types      # regenerate TypeScript types and Zod from the contracts
 npx nx run-many -t lint test typecheck build
 ```
